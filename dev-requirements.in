@@ -1,0 +1,10 @@
+# This file only contains the high-level development dependencies without a
+# pinned version. Install to a fresh virtualenv, freeze and remove duplicates
+# from requirements.txt to generate updated dev-requirements.txt
+
+-r requirements.in
+
+pylint
+pytest
+pytest-cov
+watchdog[watchmedo]
