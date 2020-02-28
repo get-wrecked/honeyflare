@@ -26,7 +26,7 @@ create_virtualenv () {
 }
 
 install_requirements () {
-    ./venv/bin/pip install --no-dependencies -r requirements.txt
+    ./venv/bin/pip install --no-dependencies -r dev-requirements.txt
 }
 
 if [[ $BASH_SOURCE = $0 ]]; then
