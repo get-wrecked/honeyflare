@@ -2,6 +2,9 @@
 
 Forward Cloudflare logs to Honeycomb
 
+Honeyflare assumes that your Cloudflare logs uses the UnixNanos format for
+timestamps, make sure you have that set before deploying Honeyflare.
+
 
 ## Development
 
