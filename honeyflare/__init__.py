@@ -22,6 +22,7 @@ def process_bucket_object(bucket, object_name, honeycomb_dataset, honeycomb_key,
         event.send()
 
     libhoney_client.close()
+    os.remove(local_path)
 
 
 def create_libhoney_client(writekey, dataset):
