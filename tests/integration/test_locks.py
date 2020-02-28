@@ -35,8 +35,8 @@ def test_lock_object(bucket, lock_name):
 
 @pytest.fixture
 def lock_name(bucket):
+    lock_name = 'honeyflare-test-' + base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8')
     try:
-        lock_name = 'honeyflare-test-' + base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8')
         yield lock_name
     finally:
         try:
