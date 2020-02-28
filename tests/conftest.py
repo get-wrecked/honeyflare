@@ -23,10 +23,12 @@ class CleanedTempLogFiles():
         self.files_created = []
 
 
-    def create_file(self, data):
+    def create_file(self, *data_list):
         with tempfile.NamedTemporaryFile(delete=False) as tmp_fh:
             with gzip.GzipFile(fileobj=tmp_fh, mode='w') as gzip_fh:
-                gzip_fh.write(json.dumps(data).encode('utf-8'))
+                for data in data_list:
+                    gzip_fh.write(json.dumps(data).encode('utf-8'))
+                    gzip_fh.write('\n'.encode('utf-8'))
             name = tmp_fh.name
 
         self.files_created.append(name)
