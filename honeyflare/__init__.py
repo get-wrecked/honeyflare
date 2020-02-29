@@ -1,6 +1,6 @@
 import gzip
 import json
-import urllib.parse
+import os
 
 import libhoney
 

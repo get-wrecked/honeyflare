@@ -1,4 +1,3 @@
-import contextlib
 from io import BytesIO
 
 from google.cloud import storage
