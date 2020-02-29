@@ -3,7 +3,7 @@ import pytest
 from honeyflare.urlshape import compile_pattern, urlshape, UrlShape
 
 
-@pytest.mark.parametrize('uri,pattern,filter_params,expected', [
+@pytest.mark.parametrize('uri,pattern,query_params_filter,expected', [
     ('/foo', '/:first', None, UrlShape(
         '/:first',
         '/foo',
@@ -50,6 +50,6 @@ from honeyflare.urlshape import compile_pattern, urlshape, UrlShape
         {'key': 'val'},
     )),
 ])
-def test_urlshape(uri, pattern, filter_params, expected):
-    ret = urlshape(uri, [compile_pattern(pattern)], filter_params)
+def test_urlshape(uri, pattern, query_params_filter, expected):
+    ret = urlshape(uri, [compile_pattern(pattern)], query_params_filter)
     assert ret == expected

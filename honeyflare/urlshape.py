@@ -36,11 +36,11 @@ def compile_pattern(path_pattern):
     return Pattern(path_pattern, regex)
 
 
-def urlshape(uri, patterns, filter_params=None):
+def urlshape(uri, patterns, query_params_filter=None):
     '''
     :param uri: A relative uri to be parsed.
     :param patterns: A list of `Pattern` to match against.
-    :param filter_params: A set of the query parameters that will be included
+    :param query_params_filter: A set of the query parameters that will be included
         in the result. If `None` all params will be included, if empty set none
         will be included.
     :returns: A UrlShape
@@ -60,7 +60,7 @@ def urlshape(uri, patterns, filter_params=None):
 
     params = []
     for param, value in sorted(urllib.parse.parse_qsl(parsed_uri.query, keep_blank_values=True)):
-        if filter_params is None or param in filter_params:
+        if query_params_filter is None or param in query_params_filter:
             query_params[param] = value
         params.append(param)
 
