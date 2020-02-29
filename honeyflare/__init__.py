@@ -1,11 +1,17 @@
 import gzip
 import json
 import os
+import random
+import re
+import sys
 
 import libhoney
 
 from .version import __version__
 from .urlshape import compile_pattern, urlshape
+
+
+STATUS_CODE_RE = re.compile(r'"EdgeResponseStatus":\s?(\d{3})')
 
 
 def process_bucket_object(
@@ -14,7 +20,8 @@ def process_bucket_object(
         honeycomb_dataset,
         honeycomb_key,
         patterns=None,
-        query_param_filter=None):
+        query_param_filter=None,
+        sampling_rate_by_status=None):
     '''
     :param bucket: A `google.cloud.storage.bucket.Bucket` logs should be
         downloaded from.
@@ -24,6 +31,9 @@ def process_bucket_object(
     :param patterns: A list of path patterns to match against.
     :param query_param_filter: A set of query parameters to allow. If None, all
         will be allowed. If empty, none.
+    :param sampling_rate_by_status: A dictionary mapping a status code to a
+        sampling rate. Ie {200: 10, 400: 1}. A specific match will be checked
+        first (ie {404: 10}), then the general class of code (ie 400 for a 404).
     '''
     local_path = download_file(bucket, object_name)
     libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
@@ -59,10 +69,46 @@ def download_file(bucket, object_name):
     return local_path
 
 
-def get_file_entries(input_file):
+def get_sampled_file_entries(input_file, sampling_rate_by_status):
+    for raw_entry in get_raw_file_entries(input_file):
+        # Use regex to extract status first to not incur the overhead of json
+        # parsing on lines we'll skip
+        match = STATUS_CODE_RE.search(raw_entry)
+        if not match:
+            sys.stderr.write('Log line with missing status code: %s' % raw_entry)
+            continue
+
+        status_code = int(match.group(1))
+        sampling_rate = 1
+        direct_rate = sampling_rate_by_status.get(status_code)
+        if direct_rate is not None:
+            sampling_rate = direct_rate
+        else:
+            if status_code < 300:
+                class_code = 200
+            elif status_code < 400:
+                class_code = 300
+            elif status_code < 500:
+                class_code = 400
+            else:
+                class_code = 500
+            class_rate = sampling_rate_by_status.get(class_code)
+            if class_rate is not None:
+                sampling_rate = class_rate
+
+        if sampling_rate == 0:
+            continue
+
+        if sampling_rate == 1:
+            yield json.loads(raw_entry)
+
+        if random.randint(1, sampling_rate) == 1:
+            yield json.loads(raw_entry)
+
+
+def get_raw_file_entries(input_file):
     with gzip.open(input_file, 'rt') as fh:
-        for line in fh:
-            yield json.loads(line)
+        yield from fh
 
 
 def enrich_entry(entry, path_patterns, query_param_filter):
