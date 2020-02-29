@@ -13,22 +13,44 @@ pytestmark = pytest.mark.integration
 
 
 def test_process_file(bucket, test_files, blob_name):
-    local_file = test_files.create_file({'key1': 'val1'}, {'key2': 'val2'})
+    patterns = [
+        '/authors/:id/*',
+        '/books/:isbn',
+    ]
+    local_file = test_files.create_file(
+        {
+            'ClientRequestURI': '/books/f08ca7b3-f51a-44d3-9669-384bc5a65720',
+            'EdgeEndTimestamp': 900000000,
+            'EdgeStartTimestamp': 1000000000,
+        },
+        {
+            'ClientRequestURI': '/authors/42/pictures?expand=true',
+            'EdgeEndTimestamp': 1900000000,
+            'EdgeStartTimestamp': 20000000000,
+        },
+    )
     blob = bucket.blob(blob_name)
     with open(local_file, 'rb') as fh:
         blob.upload_from_file(fh)
 
     with mock.patch('libhoney.Client') as mock_client:
         mock_event = mock_client.return_value.new_event.return_value
-        process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key')
+        process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key', patterns, set())
         mock_client.assert_called_with(
             writekey='test-key',
             dataset='test-dataset',
             block_on_send=True,
             user_agent_addition='honeyflare/%s' % __version__,
         )
-        mock_event.add.assert_any_call({'key1': 'val1'})
-        mock_event.add.assert_any_call({'key2': 'val2'})
+        first_call = mock_event.add.call_args_list[0]
+        assert (first_call[0][0]['ClientRequestURI'] ==
+            '/books/f08ca7b3-f51a-44d3-9669-384bc5a65720')
+        assert first_call[0][0]['UriShape'] == '/books/:isbn'
+        second_call = mock_event.add.call_args_list[1]
+        assert (second_call[0][0]['ClientRequestURI'] ==
+            '/authors/42/pictures?expand=true')
+        assert second_call[0][0]['UriShape'] == '/authors/:id/*?expand=?'
+        assert 'Query_expand' not in second_call[0][0]
         mock_event.send.assert_called_with()
         mock_client.return_value.close.assert_called_once()
 

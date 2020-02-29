@@ -8,17 +8,32 @@ from .version import __version__
 from .urlshape import compile_pattern, urlshape
 
 
-def process_bucket_object(bucket, object_name, honeycomb_dataset, honeycomb_key, settings=None):
+def process_bucket_object(
+        bucket,
+        object_name,
+        honeycomb_dataset,
+        honeycomb_key,
+        patterns=None,
+        query_param_filter=None):
     '''
-    :param bucket: A `google.cloud.storage.bucket.Bucket` logs should be downloaded from.
+    :param bucket: A `google.cloud.storage.bucket.Bucket` logs should be
+        downloaded from.
     :param object_name: The name of the object in the bucket to download.
     :param honeycomb_dataset: The name of the honeycomb dataset to write to.
     :param honeycomb_key: The honeycomb API key.
+    :param patterns: A list of path patterns to match against.
+    :param query_param_filter: A set of query parameters to allow. If None, all
+        will be allowed. If empty, none.
     '''
     local_path = download_file(bucket, object_name)
     libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
+    path_patterns = []
+    for pattern in patterns or []:
+        path_patterns.append(compile_pattern(pattern))
+
     for entry in get_file_entries(local_path):
         event = libhoney_client.new_event()
+        enrich_entry(entry, path_patterns, query_param_filter)
         event.add(entry)
         event.send()
 
@@ -50,7 +65,7 @@ def get_file_entries(input_file):
             yield json.loads(line)
 
 
-def enrich_entry(entry, path_patterns):
+def enrich_entry(entry, path_patterns, query_param_filter):
     '''
     :param entry: A dictionary with the log entry fields.
     :param path_patterns: A list of `.urlshape.Pattern` for known path patterns
@@ -60,7 +75,7 @@ def enrich_entry(entry, path_patterns):
     entry['DurationSeconds'] = duration_ms/1000
     entry['DurationMs'] = duration_ms
 
-    url_shape = urlshape(entry['ClientRequestURI'], path_patterns)
+    url_shape = urlshape(entry['ClientRequestURI'], path_patterns, query_param_filter)
     entry['Path'] = url_shape.path
     entry['PathShape'] = url_shape.path_shape
     entry['Query'] = url_shape.query
