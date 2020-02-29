@@ -5,6 +5,7 @@ import urllib.parse
 import libhoney
 
 from .version import __version__
+from .urlshape import compile_pattern, urlshape
 
 
 def process_bucket_object(bucket, object_name, honeycomb_dataset, honeycomb_key, settings=None):
@@ -49,21 +50,23 @@ def get_file_entries(input_file):
             yield json.loads(line)
 
 
-def enrich_entry(entry):
+def enrich_entry(entry, path_patterns):
+    '''
+    :param entry: A dictionary with the log entry fields.
+    :param path_patterns: A list of `.urlshape.Pattern` for known path patterns
+        to parse.
+    '''
     duration_ms = (entry['EdgeEndTimestamp'] - entry['EdgeStartTimestamp'])/1e6
     entry['DurationSeconds'] = duration_ms/1000
     entry['DurationMs'] = duration_ms
 
-    parsed_uri = urllib.parse.urlparse('https://%s%s' % (
-        entry['EdgeRequestHost'], entry['ClientRequestURI']))
-    entry['Query'] = parsed_uri.query
-    params = []
-    for param, value in sorted(urllib.parse.parse_qsl(parsed_uri.query, keep_blank_values=True)):
-        entry['Query_' + param] = value
-        params.append(param)
-    entry['QueryShape'] = '&'.join('%s=?' % param for param in params)
-    entry['PathShape'] = parsed_uri.path
-    if parsed_uri.query:
-        entry['UriShape'] = entry['PathShape'] + '?' + entry['QueryShape']
-    else:
-        entry['UriShape'] = entry['PathShape']
+    url_shape = urlshape(entry['ClientRequestURI'], path_patterns)
+    entry['Path'] = url_shape.path
+    entry['PathShape'] = url_shape.path_shape
+    entry['Query'] = url_shape.query
+    entry['QueryShape'] = url_shape.query_shape
+    entry['UriShape'] = url_shape.uri_shape
+    for path_param, value in url_shape.path_params.items():
+        entry['Path_' + path_param] = value
+    for query_param, value in url_shape.query_params.items():
+        entry['Query_' + query_param] = value
