@@ -20,11 +20,13 @@ def test_process_file(bucket, test_files, blob_name):
     local_file = test_files.create_file(
         {
             'ClientRequestURI': '/books/f08ca7b3-f51a-44d3-9669-384bc5a65720',
+            'EdgeResponseStatus': 200,
             'EdgeEndTimestamp': 900000000,
             'EdgeStartTimestamp': 1000000000,
         },
         {
             'ClientRequestURI': '/authors/42/pictures?expand=true',
+            'EdgeResponseStatus': 200,
             'EdgeEndTimestamp': 1900000000,
             'EdgeStartTimestamp': 20000000000,
         },
@@ -35,7 +37,9 @@ def test_process_file(bucket, test_files, blob_name):
 
     with mock.patch('libhoney.Client') as mock_client:
         mock_event = mock_client.return_value.new_event.return_value
+
         process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key', patterns, set())
+
         mock_client.assert_called_with(
             writekey='test-key',
             dataset='test-dataset',
@@ -51,7 +55,7 @@ def test_process_file(bucket, test_files, blob_name):
             '/authors/42/pictures?expand=true')
         assert second_call[0][0]['UriShape'] == '/authors/:id/*?expand=?'
         assert 'Query_expand' not in second_call[0][0]
-        mock_event.send.assert_called_with()
+        mock_event.send_presampled.assert_called_with()
         mock_client.return_value.close.assert_called_once()
 
 

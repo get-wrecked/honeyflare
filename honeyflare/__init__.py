@@ -35,17 +35,21 @@ def process_bucket_object(
         sampling rate. Ie {200: 10, 400: 1}. A specific match will be checked
         first (ie {404: 10}), then the general class of code (ie 400 for a 404).
     '''
+    if sampling_rate_by_status is None:
+        sampling_rate_by_status = {}
+
     local_path = download_file(bucket, object_name)
     libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
     path_patterns = []
     for pattern in patterns or []:
         path_patterns.append(compile_pattern(pattern))
 
-    for entry in get_file_entries(local_path):
+    for sample_rate, entry in get_sampled_file_entries(local_path, sampling_rate_by_status):
         event = libhoney_client.new_event()
+        event.sample_rate = sample_rate
         enrich_entry(entry, path_patterns, query_param_filter)
         event.add(entry)
-        event.send()
+        event.send_presampled()
 
     libhoney_client.close()
     os.remove(local_path)
@@ -100,10 +104,11 @@ def get_sampled_file_entries(input_file, sampling_rate_by_status):
             continue
 
         if sampling_rate == 1:
-            yield json.loads(raw_entry)
+            yield sampling_rate, json.loads(raw_entry)
+            continue
 
         if random.randint(1, sampling_rate) == 1:
-            yield json.loads(raw_entry)
+            yield sampling_rate, json.loads(raw_entry)
 
 
 def get_raw_file_entries(input_file):
