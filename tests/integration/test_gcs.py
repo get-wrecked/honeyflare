@@ -1,4 +1,5 @@
 import base64
+import datetime
 import os
 import unittest.mock as mock
 
@@ -21,14 +22,14 @@ def test_process_file(bucket, test_files, blob_name):
         {
             'ClientRequestURI': '/books/f08ca7b3-f51a-44d3-9669-384bc5a65720',
             'EdgeResponseStatus': 200,
-            'EdgeEndTimestamp': 900000000,
-            'EdgeStartTimestamp': 1000000000,
+            'EdgeEndTimestamp': 1000000000,
+            'EdgeStartTimestamp': 900000000,
         },
         {
             'ClientRequestURI': '/authors/42/pictures?expand=true',
             'EdgeResponseStatus': 200,
-            'EdgeEndTimestamp': 1900000000,
-            'EdgeStartTimestamp': 20000000000,
+            'EdgeEndTimestamp': 2000000000,
+            'EdgeStartTimestamp': 19000000000,
         },
     )
     blob = bucket.blob(blob_name)
@@ -54,6 +55,9 @@ def test_process_file(bucket, test_files, blob_name):
         assert (second_call[0][0]['ClientRequestURI'] ==
             '/authors/42/pictures?expand=true')
         assert second_call[0][0]['UriShape'] == '/authors/:id/*?expand=?'
+        # This property is overwritten for the first event, thus only testing it
+        # on the second one
+        assert mock_event.created_at == datetime.datetime(1970, 1, 1, 0, 0, 2)
         assert 'Query_expand' not in second_call[0][0]
         mock_event.send_presampled.assert_called_with()
         mock_client.return_value.close.assert_called_once()

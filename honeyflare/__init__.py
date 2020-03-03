@@ -1,3 +1,4 @@
+import datetime
 import gzip
 import json
 import os
@@ -65,6 +66,7 @@ def process_bucket_object(
             event.sample_rate = sample_rate
             enrich_entry(entry, compiled_patterns, query_param_filter)
             event.add(entry)
+            event.created_at = datetime.datetime.utcfromtimestamp(entry['EdgeEndTimestamp']/1e9)
             event.send_presampled()
 
         libhoney_client.close()
