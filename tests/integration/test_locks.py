@@ -33,6 +33,20 @@ def test_lock_object(bucket, lock_name):
                 pass
 
 
+def test_old_lock_is_deleted(bucket, lock_name):
+    # If a lock is older than the maximum execution time of a cloud function
+    # the function must have crashed without cleaning it up, thus we should
+    # delete it and retry.
+    lock = locks.GCSLock(bucket, lock_name)
+    invalidated_lock = False
+    with lock:
+        with mock.patch('honeyflare.locks.MAX_EXECUTION_TIME_SECONDS', -1):
+            other_lock = locks.GCSLock(bucket, lock_name)
+            with other_lock:
+                invalidated_lock = True
+    assert invalidated_lock
+
+
 @pytest.fixture
 def lock_name(bucket):
     lock_name = 'honeyflare-test-' + base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8')

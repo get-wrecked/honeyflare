@@ -50,7 +50,6 @@ def test_get_sampled_file_entries(test_files):
     assert lines_by_status[503] == 200
 
 
-
 def test_enrich_entry():
     entry = {
         'ClientRequestURI': "/users/id1337?regularParam=paramValue&emptyParam=",
