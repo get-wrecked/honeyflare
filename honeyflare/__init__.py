@@ -47,18 +47,17 @@ def process_bucket_object(
     if lock_bucket is None:
         lock_bucket = bucket
 
+    compiled_patterns = [compile_pattern(p) for p in patterns or []]
     libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
+
     lock = GCSLock(lock_bucket, 'locks/%s' % object_name)
     with lock:
         local_path = download_file(bucket, object_name)
-        path_patterns = []
-        for pattern in patterns or []:
-            path_patterns.append(compile_pattern(pattern))
 
         for sample_rate, entry in get_sampled_file_entries(local_path, sampling_rate_by_status):
             event = libhoney_client.new_event()
             event.sample_rate = sample_rate
-            enrich_entry(entry, path_patterns, query_param_filter)
+            enrich_entry(entry, compiled_patterns, query_param_filter)
             event.add(entry)
             event.send_presampled()
 
