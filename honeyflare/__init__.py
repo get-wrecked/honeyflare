@@ -7,8 +7,9 @@ import sys
 
 import libhoney
 
-from .version import __version__
+from .locks import GCSLock
 from .urlshape import compile_pattern, urlshape
+from .version import __version__
 
 
 STATUS_CODE_RE = re.compile(r'"EdgeResponseStatus":\s?(\d{3})')
@@ -21,7 +22,9 @@ def process_bucket_object(
         honeycomb_key,
         patterns=None,
         query_param_filter=None,
-        sampling_rate_by_status=None):
+        sampling_rate_by_status=None,
+        lock_bucket=None,
+        ):
     '''
     :param bucket: A `google.cloud.storage.bucket.Bucket` logs should be
         downloaded from.
@@ -34,25 +37,33 @@ def process_bucket_object(
     :param sampling_rate_by_status: A dictionary mapping a status code to a
         sampling rate. Ie {200: 10, 400: 1}. A specific match will be checked
         first (ie {404: 10}), then the general class of code (ie 400 for a 404).
+    :param lock_bucket: If you want to use a dedicated bucket for holding locks
+        and completion status, pass it here. Otherwise the bucket that holds the
+        logs will be used (requires write access to that bucket).
     '''
     if sampling_rate_by_status is None:
         sampling_rate_by_status = {}
 
-    local_path = download_file(bucket, object_name)
+    if lock_bucket is None:
+        lock_bucket = bucket
+
     libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
-    path_patterns = []
-    for pattern in patterns or []:
-        path_patterns.append(compile_pattern(pattern))
+    lock = GCSLock(lock_bucket, 'locks/%s' % object_name)
+    with lock:
+        local_path = download_file(bucket, object_name)
+        path_patterns = []
+        for pattern in patterns or []:
+            path_patterns.append(compile_pattern(pattern))
 
-    for sample_rate, entry in get_sampled_file_entries(local_path, sampling_rate_by_status):
-        event = libhoney_client.new_event()
-        event.sample_rate = sample_rate
-        enrich_entry(entry, path_patterns, query_param_filter)
-        event.add(entry)
-        event.send_presampled()
+        for sample_rate, entry in get_sampled_file_entries(local_path, sampling_rate_by_status):
+            event = libhoney_client.new_event()
+            event.sample_rate = sample_rate
+            enrich_entry(entry, path_patterns, query_param_filter)
+            event.add(entry)
+            event.send_presampled()
 
-    libhoney_client.close()
-    os.remove(local_path)
+        libhoney_client.close()
+        os.remove(local_path)
 
 
 def create_libhoney_client(writekey, dataset):
