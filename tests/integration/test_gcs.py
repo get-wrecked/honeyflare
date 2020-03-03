@@ -63,6 +63,26 @@ def test_process_file(bucket, test_files, blob_name):
         mock_client.return_value.close.assert_called_once()
 
 
+def test_process_repeated_file(bucket, test_files, blob_name):
+    local_file = test_files.create_file({
+        'ClientRequestURI': '/books/f08ca7b3-f51a-44d3-9669-384bc5a65720',
+        'EdgeResponseStatus': 200,
+        'EdgeEndTimestamp': 1000000000,
+        'EdgeStartTimestamp': 900000000,
+    })
+    blob = bucket.blob(blob_name)
+    with open(local_file, 'rb') as fh:
+        blob.upload_from_file(fh)
+
+    with mock.patch('libhoney.Client') as mock_client:
+
+        process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key')
+        process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key')
+
+        # Should have only processed the event the first time
+        assert mock_client.return_value.new_event.call_count == 1
+
+
 @pytest.fixture
 def blob_name(bucket):
     _blob_name = 'honeyflare-test-' + base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8')
