@@ -40,7 +40,7 @@ def test_old_lock_is_deleted(bucket, lock_name):
     lock = locks.GCSLock(bucket, lock_name)
     invalidated_lock = False
     with lock:
-        with mock.patch('honeyflare.locks.MAX_EXECUTION_TIME_SECONDS', -1):
+        with mock.patch('honeyflare.locks.IGNORE_LOCK_TIMEOUT_SECONDS', -1):
             other_lock = locks.GCSLock(bucket, lock_name)
             with other_lock:
                 invalidated_lock = True

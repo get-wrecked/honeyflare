@@ -12,8 +12,11 @@ from .exceptions import FileLockedException
 storage.blob._MULTIPART_URL_TEMPLATE += '&ifGenerationMatch=0'
 storage.blob._RESUMABLE_URL_TEMPLATE += '&ifGenerationMatch=0'
 
-# This is the maximum support timeout by Google Cloud Functions
-MAX_EXECUTION_TIME_SECONDS = 540
+# The max execution time for a Google Cloud Function is 9 minutes, but an
+# instance might keep a timed out invocation in memory for longer, resuming it
+# when it's invoked again. To minimize the odds this happens, make the lock
+# ignore timeout a fair amount longer
+IGNORE_LOCK_TIMEOUT_SECONDS = 7200
 
 
 class GCSLock():
@@ -42,7 +45,7 @@ def lock(bucket, lock_name):
         # might still be running)
         blob.reload()
         lock_age = datetime.now(timezone.utc) - blob.time_created
-        if lock_age.total_seconds() > MAX_EXECUTION_TIME_SECONDS:
+        if lock_age.total_seconds() > IGNORE_LOCK_TIMEOUT_SECONDS:
             try:
                 blob.delete()
             except NotFound:
