@@ -6,6 +6,7 @@ import re
 import sys
 
 import libhoney
+from google.api_core.exceptions import PreconditionFailed
 
 from .locks import GCSLock
 from .urlshape import compile_pattern, urlshape
@@ -52,6 +53,11 @@ def process_bucket_object(
 
     lock = GCSLock(lock_bucket, 'locks/%s' % object_name)
     with lock:
+        if is_already_processed(lock_bucket, object_name):
+            # We might have been retried due to a failure but another
+            # function succeeded in the meantime
+            return
+
         local_path = download_file(bucket, object_name)
 
         for sample_rate, entry in get_sampled_file_entries(local_path, sampling_rate_by_status):
@@ -63,6 +69,8 @@ def process_bucket_object(
 
         libhoney_client.close()
         os.remove(local_path)
+        mark_as_processed(lock_bucket, object_name)
+
 
 
 def create_libhoney_client(writekey, dataset):
@@ -74,6 +82,24 @@ def create_libhoney_client(writekey, dataset):
     )
     client.add_field('MetaProcessor', 'honeyflare/%s' % __version__)
     return client
+
+
+def is_already_processed(lock_bucket, object_name):
+    return _processed_blob(lock_bucket, object_name).exists()
+
+
+def mark_as_processed(lock_bucket, object_name):
+    blob = _processed_blob(lock_bucket, object_name)
+    try:
+        blob.upload_from_string(b'')
+    except PreconditionFailed:
+        # Another invocation has already processed this but it failed to be
+        # caught in the lock. Ignore
+        pass
+
+
+def _processed_blob(bucket, object_name):
+    return bucket.blob('completed/%s' % object_name)
 
 
 def download_file(bucket, object_name):
