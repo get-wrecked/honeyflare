@@ -1,4 +1,3 @@
-from io import BytesIO
 from datetime import datetime, timezone
 
 from google.cloud import storage
@@ -13,7 +12,6 @@ from .exceptions import FileLockedException
 storage.blob._MULTIPART_URL_TEMPLATE += '&ifGenerationMatch=0'
 storage.blob._RESUMABLE_URL_TEMPLATE += '&ifGenerationMatch=0'
 
-EMPTY_FILEOBJ = BytesIO()
 # This is the maximum support timeout by Google Cloud Functions
 MAX_EXECUTION_TIME_SECONDS = 540
 
@@ -37,7 +35,7 @@ class GCSLock():
 def lock(bucket, lock_name):
     blob = bucket.blob(lock_name)
     try:
-        blob.upload_from_file(EMPTY_FILEOBJ)
+        blob.upload_from_string(b'')
         return True
     except PreconditionFailed:
         # Check that the lock was created recently (ie the creator function
@@ -53,7 +51,7 @@ def lock(bucket, lock_name):
 
             # Retry acuiring the lock
             try:
-                blob.upload_from_file(EMPTY_FILEOBJ)
+                blob.upload_from_string(b'')
                 return True
             except PreconditionFailed:
                 pass
