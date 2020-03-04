@@ -6,7 +6,7 @@ import pytest
 from google.cloud import storage
 
 from honeyflare import locks
-from honeyflare.exceptions import FileLockedException
+from honeyflare.exceptions import FileLockedError
 from google.api_core.exceptions import NotFound
 
 
@@ -28,7 +28,7 @@ def test_lock_object(bucket, lock_name):
     lock = locks.GCSLock(bucket, lock_name)
     with lock:
         other_lock = locks.GCSLock(bucket, lock_name)
-        with pytest.raises(FileLockedException):
+        with pytest.raises(FileLockedError):
             with other_lock:
                 pass
 

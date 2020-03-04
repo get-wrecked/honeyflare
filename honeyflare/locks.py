@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from google.cloud import storage
 from google.api_core.exceptions import PreconditionFailed, NotFound
 
-from .exceptions import FileLockedException
+from .exceptions import FileLockedError
 
 
 # Patch generation match preconditions onto the requests since the python
@@ -27,7 +27,7 @@ class GCSLock():
 
     def __enter__(self):
         if not lock(self.bucket, self.lock_name):
-            raise FileLockedException()
+            raise FileLockedError()
         return self
 
 
