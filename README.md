@@ -22,6 +22,27 @@ you want to use. Then:
     $ ./test -m integration
 
 
+## Deployment
+
+The file to parsed is currently downloaded in it's entirety to `/tmp`, which is
+mounted as a tmpfs. Thus the function needs to have enough memory to handle the
+biggest file you receive from Cloudflare.
+
+```sh
+$ gcloud functions deploy honeyflare \
+    --entry-point main \
+    --retry \
+    --timeout 540 \
+    --memory 256 \
+    --service-account <account> \
+    --env-vars-file sample-env.yml \
+    --ingress-settings internal-only \
+    --trigger-resource <bucket> \
+    --trigger-event google.storage.object.finalize \
+    --runtime python37
+```
+
+
 ## License
 
 This project is licensed under the Hippocratic License (a MIT derivative), and
