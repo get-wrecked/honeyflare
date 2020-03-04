@@ -9,6 +9,7 @@ import sys
 import libhoney
 from google.api_core.exceptions import PreconditionFailed
 
+from .exceptions import RetriableError
 from .locks import GCSLock
 from .urlshape import compile_pattern, urlshape
 from .version import __version__
