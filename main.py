@@ -82,7 +82,7 @@ def main(event, context):
     start_time = time.time()
     try:
         bucket = storage_client.bucket(event['bucket'])
-        process_bucket_object(bucket, event['name'])
+        process_bucket_object(bucket, event['name'], honeycomb_dataset, honeycomb_key)
     except RetriableError as e:
         # Hard exit to make sure this is retried
         event.add_field('error', e.__class__.__name__)
