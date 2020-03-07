@@ -85,18 +85,18 @@ def main(event, context):
         process_bucket_object(bucket, event['name'], honeycomb_dataset, honeycomb_key)
     except RetriableError as e:
         # Hard exit to make sure this is retried
-        event.add_field('error', e.__class__.__name__)
-        event.add_field('error_message', str(e))
+        meta_event.add_field('error', e.__class__.__name__)
+        meta_event.add_field('error_message', str(e))
         sys.exit(1)
     except Exception as e:
         # Swallow these but make sure they are logged and reported so that we can fix them
         traceback.print_exc()
-        event.add_field('error', e.__class__.__name__)
-        event.add_field('error_message', str(e))
+        meta_event.add_field('error', e.__class__.__name__)
+        meta_event.add_field('error_message', str(e))
     finally:
-        event.add_field('processing_time_seconds', time.time() - start_time)
-        print(logfmt.format(event.fields))
-        event.send()
+        meta_event.add_field('processing_time_seconds', time.time() - start_time)
+        print(logfmt.format(meta_event.fields()))
+        meta_event.send()
 
 
 def instrument_invocation(libhoney_event, event, context):
