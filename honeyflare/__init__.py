@@ -75,7 +75,6 @@ def process_bucket_object(
         mark_as_processed(lock_bucket, object_name)
 
 
-
 def create_libhoney_client(writekey, dataset):
     client = libhoney.Client(
         writekey=writekey,

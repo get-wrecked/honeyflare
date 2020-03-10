@@ -64,10 +64,6 @@ def get_vault_secret(vault_url):
     return honeycomb_key['data']['data'][key]
 
 
-if honeycomb_key.startswith('vault://'):
-    honeycomb_key = get_vault_secret(honeycomb_key)
-
-
 def main(event, context):
     '''
     Triggered by a change to a Cloud Storage bucket.
@@ -75,6 +71,9 @@ def main(event, context):
     :param event: Event payload (dict).
     :param context: Metadata for the event (google.cloud.functions.Context)
     '''
+    global honeycomb_key
+    if honeycomb_key.startswith('vault://'):
+        honeycomb_key = get_vault_secret(honeycomb_key)
     meta_client = create_libhoney_client(honeycomb_dataset, honeycomb_key)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
