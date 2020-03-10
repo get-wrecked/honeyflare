@@ -78,10 +78,20 @@ def main(event, context):
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
 
+    lock_bucket = os.environ.get('LOCK_BUCKET')
+    if lock_bucket:
+        lock_bucket = storage_client.bucket(lock_bucket)
+
     start_time = time.time()
     try:
         bucket = storage_client.bucket(event['bucket'])
-        process_bucket_object(bucket, event['name'], honeycomb_dataset, honeycomb_key)
+        process_bucket_object(
+            bucket,
+            event['name'],
+            honeycomb_dataset,
+            honeycomb_key,
+            lock_bucket=lock_bucket,
+        )
     except RetriableError as e:
         # Hard exit to make sure this is retried
         meta_event.add_field('error', e.__class__.__name__)
