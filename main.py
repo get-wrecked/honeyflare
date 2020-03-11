@@ -110,7 +110,7 @@ def main(event, context):
             honeycomb_key = get_vault_secret(honeycomb_key)
 
         bucket = storage_client.bucket(event['bucket'])
-        process_bucket_object(
+        events_handled = process_bucket_object(
             bucket,
             event['name'],
             honeycomb_dataset,
@@ -118,6 +118,7 @@ def main(event, context):
             lock_bucket=lock_bucket,
             sampling_rate_by_status=sampling_rate_by_status,
         )
+        meta_event.add_field('events', events_handled)
     except RetriableError as e:
         # Hard exit to make sure this is retried
         meta_event.add_field('error', e.__class__.__name__)

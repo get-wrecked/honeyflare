@@ -54,6 +54,7 @@ def process_bucket_object(
     libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
 
     lock = GCSLock(lock_bucket, 'locks/%s' % object_name)
+    total_events = 0
     with lock:
         if is_already_processed(lock_bucket, object_name):
             # We might have been retried due to a failure but another
@@ -69,10 +70,12 @@ def process_bucket_object(
             event.add(entry)
             event.created_at = datetime.datetime.utcfromtimestamp(entry['EdgeEndTimestamp']/1e9)
             event.send_presampled()
+            total_events += 1
 
         libhoney_client.close()
         os.remove(local_path)
         mark_as_processed(lock_bucket, object_name)
+    return total_events
 
 
 def create_libhoney_client(writekey, dataset):
