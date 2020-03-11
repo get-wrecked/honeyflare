@@ -97,7 +97,7 @@ def main(event, context):
     :param context: Metadata for the event (google.cloud.functions.Context)
     '''
     global honeycomb_key, lock_bucket
-    meta_client = create_libhoney_client(honeycomb_dataset, honeycomb_key)
+    meta_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
 
