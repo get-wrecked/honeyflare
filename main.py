@@ -52,9 +52,10 @@ def get_vault_secret(vault_url):
             os.environ['REQUESTS_CA_BUNDLE'] = fh.name
 
     vault_url = '%s://%s' % (scheme, parsed_url.netloc)
+    vault_role = parsed_parameters.get('role', 'honeyflare')
     client = hvac.Client(url=vault_url)
 
-    client.auth.gcp.login(role='honeyflare', jwt=get_auth_jwt())
+    client.auth.gcp.login(role=vault_role, jwt=get_auth_jwt(vault_role))
 
     parsed_path = PurePosixPath(parsed_url.path)
 
@@ -66,10 +67,10 @@ def get_vault_secret(vault_url):
     return honeycomb_key['data']['data'][key]
 
 
-def get_auth_jwt():
+def get_auth_jwt(vault_role):
     response = requests.get('http://metadata/computeMetadata/v1/instance/service-accounts/default/identity',
         params={
-            'audience': 'aud',
+            'audience': 'vault/%s' % vault_role,
         },
         headers={
             'Metadata-Flavor': 'Google',

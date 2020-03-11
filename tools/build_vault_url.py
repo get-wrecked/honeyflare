@@ -6,8 +6,12 @@ import base64
 def main():
     args = get_args()
     encoded_cacert = encode_cacert(args.cacert)
-    print('https://%s/%s?key=%s&ca=%s' % (
-        args.vault_url, args.path, args.key, encoded_cacert))
+    print('https://%s/%s?key=%s%s&ca=%s' % (
+        args.vault_url,
+        args.path,
+        args.key,
+        '&role=%s' % args.role if args.role else '',
+        encoded_cacert))
 
 
 def encode_cacert(path):
@@ -23,6 +27,7 @@ def get_args():
     parser.add_argument('-k', '--key', default='key',
         help='Under which key the secret lies. Default: %(default)s', )
     parser.add_argument('cacert', help='Path to the CA cert')
+    parser.add_argument('-r', '--role', help='A vault role to use. Default: honeyflare')
     return parser.parse_args()
 
 
