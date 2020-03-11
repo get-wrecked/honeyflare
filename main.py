@@ -8,6 +8,7 @@ import traceback
 from pathlib import PurePosixPath
 
 import hvac
+import requests
 from google.cloud import storage
 
 from honeyflare import create_libhoney_client, process_bucket_object, RetriableError, logfmt
@@ -52,7 +53,8 @@ def get_vault_secret(vault_url):
 
     vault_url = '%s://%s' % (scheme, parsed_url.netloc)
     client = hvac.Client(url=vault_url)
-    client.gcp.login()
+
+    client.auth.gcp.login(role='honeyflare', jwt=get_auth_jwt())
 
     parsed_path = PurePosixPath(parsed_url.path)
 
@@ -62,6 +64,19 @@ def get_vault_secret(vault_url):
     )
     key = parsed_parameters['key'][0]
     return honeycomb_key['data']['data'][key]
+
+
+def get_auth_jwt():
+    response = requests.get('http://metadata/computeMetadata/v1/instance/service-accounts/default/identity',
+        params={
+            'audience': 'aud',
+        },
+        headers={
+            'Metadata-Flavor': 'Google',
+        },
+    )
+    response.raise_for_status()
+    return response.text
 
 
 def main(event, context):
