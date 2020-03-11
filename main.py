@@ -31,6 +31,7 @@ if honeycomb_key is None:
 
 # Convert string keys (the only kind permitted by json) to ints
 sampling_rate_by_status = {int(key): val for key, val in json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
+lock_bucket = os.environ.get('LOCK_BUCKET')
 
 
 def get_vault_secret(vault_url):
@@ -95,12 +96,11 @@ def main(event, context):
     :param event: Event payload (dict).
     :param context: Metadata for the event (google.cloud.functions.Context)
     '''
-    global honeycomb_key
+    global honeycomb_key, lock_bucket
     meta_client = create_libhoney_client(honeycomb_dataset, honeycomb_key)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
 
-    lock_bucket = os.environ.get('LOCK_BUCKET')
     if lock_bucket:
         lock_bucket = storage_client.bucket(lock_bucket)
 
