@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import sys
 import urllib.parse
@@ -27,6 +28,9 @@ if honeycomb_meta_dataset is None:
 honeycomb_key = os.environ.get('HONEYCOMB_KEY')
 if honeycomb_key is None:
     raise ValueError('Missing environment variable HONEYCOMB_KEY')
+
+# Convert string keys (the only kind permitted by json) to ints
+sampling_rate_by_status = {int(key): val for key, val in json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
 
 
 def get_vault_secret(vault_url):
@@ -112,6 +116,7 @@ def main(event, context):
             honeycomb_dataset,
             honeycomb_key,
             lock_bucket=lock_bucket,
+            sampling_rate_by_status=sampling_rate_by_status,
         )
     except RetriableError as e:
         # Hard exit to make sure this is retried
