@@ -133,6 +133,7 @@ def main(event, context):
         meta_event.add_field('processing_time_seconds', time.time() - start_time)
         print(logfmt.format(meta_event.fields()))
         meta_event.send()
+        meta_client.close()
 
 
 def instrument_invocation(libhoney_event, event, context):
