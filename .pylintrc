@@ -22,8 +22,11 @@ load-plugins=
 # Disable the message, report, category or checker with the given id(s).
 # no-member: occurs all the time with dynamic libraries (sqlalchemy), actual
 #            errors will be caught by tests
+# global-statement: Useful in Cloud Functions environement to cache and
+#            lazy-load expensive operations
 disable=missing-docstring,
     bad-continuation,
+    global-statement,
     I,
     R
 

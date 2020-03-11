@@ -69,7 +69,7 @@ def main(event, context):
         meta_event.add_field('error', e.__class__.__name__)
         meta_event.add_field('error_message', str(e))
         sys.exit(1)
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-except
         # Swallow these but make sure they are logged and reported so that we can fix them
         traceback.print_exc()
         meta_event.add_field('error', e.__class__.__name__)

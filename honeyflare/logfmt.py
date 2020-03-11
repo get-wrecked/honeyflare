@@ -2,8 +2,6 @@
 import numbers
 import re
 
-from collections import OrderedDict
-
 
 NEEDS_QUOTES_RE = re.compile(r'[\s=]')
 
