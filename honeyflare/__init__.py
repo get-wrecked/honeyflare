@@ -5,6 +5,7 @@ import os
 import random
 import re
 import sys
+import threading
 
 import libhoney
 from google.api_core.exceptions import PreconditionFailed
@@ -86,7 +87,23 @@ def create_libhoney_client(writekey, dataset):
         user_agent_addition='honeyflare/%s' % __version__,
     )
     client.add_field('MetaProcessor', 'honeyflare/%s' % __version__)
+
+    t = threading.Thread(target=read_honeycomb_responses, args=(client.responses(), dataset))
+    t.start()
+
     return client
+
+
+def read_honeycomb_responses(resp_queue, dataset):
+    '''Log failing responses from honeycomb'''
+    while True:
+        resp = resp_queue.get()
+        if resp is None:
+            # The client will enqueue a None value after we call client.close()
+            break
+
+        if resp['status_code'] > 400:
+            sys.stderr.write('Got %d from honeycomb: %s\n' % (resp['status_code'], resp['error']))
 
 
 def is_already_processed(lock_bucket, object_name):
