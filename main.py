@@ -37,10 +37,13 @@ query_param_filter = os.environ.get('QUERY_PARAM_FILTER')
 if query_param_filter is not None:
     query_param_filter = set(json.loads(query_param_filter))
 
+lock_bucket = os.environ.get('LOCK_BUCKET')
+if lock_bucket is not None:
+    lock_bucket = storage_client.bucket(lock_bucket)
+
 # Convert string keys (the only kind permitted by json) to ints
 sampling_rate_by_status = {int(key): val for key, val in
     json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
-lock_bucket = os.environ.get('LOCK_BUCKET')
 
 
 def main(event, context):
@@ -54,9 +57,6 @@ def main(event, context):
     meta_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
-
-    if lock_bucket:
-        lock_bucket = storage_client.bucket(lock_bucket)
 
     start_time = time.time()
     try:
