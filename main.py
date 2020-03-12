@@ -29,15 +29,17 @@ honeycomb_key = os.environ.get('HONEYCOMB_KEY')
 if honeycomb_key is None:
     raise ValueError('Missing environment variable HONEYCOMB_KEY')
 
-# Convert string keys (the only kind permitted by json) to ints
-sampling_rate_by_status = {int(key): val for key, val in json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
-lock_bucket = os.environ.get('LOCK_BUCKET')
 patterns = os.environ.get('PATTERNS')
 if patterns is not None:
     patterns = json.loads(patterns)
+
 query_param_filter = os.environ.get('QUERY_PARAM_FILTER')
 if query_param_filter is not None:
     query_param_filter = set(json.loads(query_param_filter))
+
+# Convert string keys (the only kind permitted by json) to ints
+sampling_rate_by_status = {int(key): val for key, val in json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
+lock_bucket = os.environ.get('LOCK_BUCKET')
 
 
 def main(event, context):
