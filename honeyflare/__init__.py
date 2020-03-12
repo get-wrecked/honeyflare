@@ -88,8 +88,8 @@ def create_libhoney_client(writekey, dataset):
     )
     client.add_field('MetaProcessor', 'honeyflare/%s' % __version__)
 
-    t = threading.Thread(target=read_honeycomb_responses, args=(client.responses(), dataset))
-    t.start()
+    thread = threading.Thread(target=read_honeycomb_responses, args=(client.responses(), dataset))
+    thread.start()
 
     return client
 

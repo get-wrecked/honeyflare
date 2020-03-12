@@ -38,7 +38,8 @@ if query_param_filter is not None:
     query_param_filter = set(json.loads(query_param_filter))
 
 # Convert string keys (the only kind permitted by json) to ints
-sampling_rate_by_status = {int(key): val for key, val in json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
+sampling_rate_by_status = {int(key): val for key, val in
+    json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
 lock_bucket = os.environ.get('LOCK_BUCKET')
 
 
@@ -74,16 +75,16 @@ def main(event, context):
             sampling_rate_by_status=sampling_rate_by_status,
         )
         meta_event.add_field('events', events_handled)
-    except RetriableError as e:
+    except RetriableError as err:
         # Hard exit to make sure this is retried
-        meta_event.add_field('error', e.__class__.__name__)
-        meta_event.add_field('error_message', str(e))
+        meta_event.add_field('error', err.__class__.__name__)
+        meta_event.add_field('error_message', str(err))
         sys.exit(1)
-    except Exception as e: # pylint: disable=broad-except
+    except Exception as err: # pylint: disable=broad-except
         # Swallow these but make sure they are logged and reported so that we can fix them
         traceback.print_exc()
-        meta_event.add_field('error', e.__class__.__name__)
-        meta_event.add_field('error_message', str(e))
+        meta_event.add_field('error', err.__class__.__name__)
+        meta_event.add_field('error_message', str(err))
     finally:
         meta_event.add_field('processing_time_seconds', time.time() - start_time)
         print(logfmt.format(meta_event.fields()))

@@ -51,7 +51,8 @@ def get_vault_secret(vault_url):
 
 
 def get_auth_jwt(vault_role):
-    response = requests.get('http://metadata/computeMetadata/v1/instance/service-accounts/default/identity',
+    url = 'http://metadata/computeMetadata/v1/instance/service-accounts/default/identity'
+    response = requests.get(url,
         params={
             'audience': 'vault/%s' % vault_role,
         },
