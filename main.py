@@ -58,7 +58,7 @@ def main(event, context):
     if honeycomb_key.startswith('vault://'):
         honeycomb_key = vault.get_vault_secret(honeycomb_key)
 
-    meta_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
+    meta_client = create_libhoney_client(honeycomb_key, honeycomb_meta_dataset)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
 
