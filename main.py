@@ -54,15 +54,16 @@ def main(event, context):
     :param context: Metadata for the event (google.cloud.functions.Context)
     '''
     global honeycomb_key, lock_bucket
+
+    if honeycomb_key.startswith('vault://'):
+        honeycomb_key = vault.get_vault_secret(honeycomb_key)
+
     meta_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
 
     start_time = time.time()
     try:
-        if honeycomb_key.startswith('vault://'):
-            honeycomb_key = vault.get_vault_secret(honeycomb_key)
-
         bucket = storage_client.bucket(event['bucket'])
         events_handled = process_bucket_object(
             bucket,
