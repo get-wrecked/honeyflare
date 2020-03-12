@@ -104,7 +104,7 @@ def read_honeycomb_responses(resp_queue, dataset):
 
         if resp['status_code'] > 400:
             sys.stderr.write('Got %d from honeycomb when submitting to %s: %s\n' % (
-                dataset, resp['status_code'], resp['error']))
+                resp['status_code'], dataset, resp['error']))
 
 
 def is_already_processed(lock_bucket, object_name):
