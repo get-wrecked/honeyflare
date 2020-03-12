@@ -32,6 +32,12 @@ if honeycomb_key is None:
 # Convert string keys (the only kind permitted by json) to ints
 sampling_rate_by_status = {int(key): val for key, val in json.loads(os.environ.get('SAMPLING_RATES', '{}')).items()}
 lock_bucket = os.environ.get('LOCK_BUCKET')
+patterns = os.environ.get('PATTERNS')
+if patterns is not None:
+    patterns = json.loads(patterns)
+query_param_filter = os.environ.get('QUERY_PARAM_FILTER')
+if query_param_filter is not None:
+    query_param_filter = set(json.loads(query_param_filter))
 
 
 def main(event, context):
@@ -60,6 +66,8 @@ def main(event, context):
             event['name'],
             honeycomb_dataset,
             honeycomb_key,
+            patterns=patterns,
+            query_param_filter=query_param_filter,
             lock_bucket=lock_bucket,
             sampling_rate_by_status=sampling_rate_by_status,
         )
