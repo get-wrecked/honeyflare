@@ -1,8 +1,8 @@
 # This file only contains the high-level development dependencies without a
-# pinned version. Install to a fresh virtualenv, freeze and remove duplicates
-# from requirements.txt to generate updated dev-requirements.txt
+# pinned version. Install to a fresh virtualenv and freeze to
+# dev-requirements.txt
 
--r requirements.in
+-r requirements.txt
 
 pylint
 pytest

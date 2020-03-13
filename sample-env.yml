@@ -1,0 +1,3 @@
+HONEYCOMB_DATASET: 'cloudflare-test'
+HONEYCOMB_META_DATASET: 'honeyflare-test'
+HONEYCOMB_KEY: 'somekey'
