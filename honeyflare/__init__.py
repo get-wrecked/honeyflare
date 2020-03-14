@@ -127,7 +127,7 @@ def _processed_blob(bucket, object_name):
 
 def download_file(bucket, object_name):
     blob = bucket.blob(object_name)
-    local_path = '/tmp/' + object_name
+    local_path = '/tmp/' + os.path.basename(object_name)
     blob.download_to_filename(local_path)
     return local_path
 

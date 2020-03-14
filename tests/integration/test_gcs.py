@@ -85,7 +85,9 @@ def test_process_repeated_file(bucket, test_files, blob_name):
 
 @pytest.fixture
 def blob_name(bucket):
-    _blob_name = 'honeyflare-test-' + base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8')
+    date_prefix = datetime.datetime.utcnow().strftime('%Y%m%d')
+    _blob_name = '%s/honeyflare-test-%s' % (
+        date_prefix, base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8'))
     try:
         yield _blob_name
     finally:
