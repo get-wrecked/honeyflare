@@ -6,7 +6,7 @@ import base64
 def main():
     args = get_args()
     encoded_cacert = encode_cacert(args.cacert)
-    print('https://%s/%s?key=%s%s&ca=%s' % (
+    print('vault://%s/%s?key=%s%s&ca=%s' % (
         args.vault_url,
         args.path,
         args.key,
