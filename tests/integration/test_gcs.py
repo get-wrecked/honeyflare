@@ -34,7 +34,8 @@ def test_process_file(bucket, test_files, blob_name):
     )
     blob = bucket.blob(blob_name)
     with open(local_file, 'rb') as fh:
-        blob.upload_from_file(fh)
+        blob.content_encoding = 'gzip'
+        blob.upload_from_file(fh, content_type='application/json')
 
     with mock.patch('libhoney.Client') as mock_client:
         mock_event = mock_client.return_value.new_event.return_value
@@ -86,7 +87,7 @@ def test_process_repeated_file(bucket, test_files, blob_name):
 @pytest.fixture
 def blob_name(bucket):
     date_prefix = datetime.datetime.utcnow().strftime('%Y%m%d')
-    _blob_name = '%s/honeyflare-test-%s' % (
+    _blob_name = '%s/honeyflare-test-%s.gz' % (
         date_prefix, base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8'))
     try:
         yield _blob_name
