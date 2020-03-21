@@ -14,6 +14,10 @@ from honeyflare import (
     vault,
 )
 
+# Ignoring invalid names here due to all the globals we cache (which aren't necessarily
+# constants)
+# pylint: disable=invalid-name
+
 storage_client = storage.Client()
 
 # Check for required envvars to fail early on invalid deployments

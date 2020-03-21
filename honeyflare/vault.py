@@ -13,7 +13,10 @@ def get_vault_secret(vault_url):
     Fetch honeycomb API token from Vault.
 
     The url should be on the form
-        vault://<host>:<port>/<mount-point>/<secret-path>?key=<lookup-key>&ca=<urlsafe-b64-ca-cert>[&https=false]
+    `vault://<host>:<port>/<mount-point>/<secret-path>?key=<lookup-key>&ca=<urlsafe-b64-ca-cert>`
+
+    In addition to the `key` and `ca` query parameters you can also specify `https=false`
+    to request the secret over plain http.
     '''
     parsed_url = urllib.parse.urlparse(vault_url)
     parsed_parameters = urllib.parse.parse_qs(parsed_url.query)

@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from honeyflare import get_raw_file_entries, get_sampled_file_entries, compile_pattern, __version__
+from honeyflare import get_raw_file_entries, get_sampled_file_entries, __version__
 
 
 def test_get_raw_file_entries(test_files):
@@ -14,7 +14,7 @@ def test_get_raw_file_entries(test_files):
 
 def test_get_sampled_file_entries(test_files):
     lines = []
-    for i in range(200):
+    for _ in range(200):
         lines.append({'EdgeResponseStatus': 200})
         lines.append({'EdgeResponseStatus': 201})
         lines.append({'EdgeResponseStatus': 204})

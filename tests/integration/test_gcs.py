@@ -5,7 +5,6 @@ import unittest.mock as mock
 
 import pytest
 from google.api_core.exceptions import NotFound
-from google.cloud import storage
 
 from honeyflare import process_bucket_object, __version__
 

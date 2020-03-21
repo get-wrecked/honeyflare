@@ -6,7 +6,7 @@ import re
 NEEDS_QUOTES_RE = re.compile(r'[\s=]')
 
 
-def format(data):
+def format(data): # pylint: disable=redefined-builtin
     return ' '.join(format_key_value_pair(key, val) for (key, val) in data.items())
 
 
