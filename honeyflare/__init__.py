@@ -185,17 +185,26 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     :param path_patterns: A list of `.urlshape.Pattern` for known path patterns
         to parse.
     '''
-    duration_ms = (entry['EdgeEndTimestamp'] - entry['EdgeStartTimestamp'])/1e6
-    entry['DurationSeconds'] = duration_ms/1000
-    entry['DurationMs'] = duration_ms
+    # Which fields are included will vary depending on the logging config, thus don't
+    # assume anything
+    edge_end_timestamp = entry.get('EdgeEndTimestamp')
+    edge_start_timestamp = entry.get('EdgeStartTimestamp')
+    if edge_end_timestamp is not None and edge_start_timestamp is not None:
+        duration_ms = (edge_end_timestamp - edge_start_timestamp)/1e6
+        entry['DurationSeconds'] = duration_ms/1000
+        entry['DurationMs'] = duration_ms
 
-    url_shape = urlshape(entry['ClientRequestURI'], path_patterns, query_param_filter)
-    entry['Path'] = url_shape.path
-    entry['PathShape'] = url_shape.path_shape
-    entry['Query'] = url_shape.query
-    entry['QueryShape'] = url_shape.query_shape
-    entry['UriShape'] = url_shape.uri_shape
-    for path_param, value in url_shape.path_params.items():
-        entry['Path_' + path_param] = value
-    for query_param, value in url_shape.query_params.items():
-        entry['Query_' + query_param] = value
+    client_request_uri = entry.get('ClientRequestURI')
+    if client_request_uri is not None:
+        url_shape = urlshape(client_request_uri, path_patterns, query_param_filter)
+        entry['Path'] = url_shape.path
+        entry['PathShape'] = url_shape.path_shape
+        entry['Query'] = url_shape.query
+        entry['QueryShape'] = url_shape.query_shape
+        entry['UriShape'] = url_shape.uri_shape
+        for path_param, value in url_shape.path_params.items():
+            entry['Path_' + path_param] = value
+        for query_param, value in url_shape.query_params.items():
+            entry['Query_' + query_param] = value
+
+
