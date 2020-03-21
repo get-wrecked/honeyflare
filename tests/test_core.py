@@ -56,6 +56,7 @@ def test_enrich_entry():
         'EdgeEndTimestamp': 1582850070117000000,
         'EdgeStartTimestamp': 1582850070112000000,
         'EdgeRequestHost': 'example.com',
+        'OriginResponseTime': 150*1e6,
     }
 
     patterns = [compile_pattern(p) for p in [
@@ -67,6 +68,8 @@ def test_enrich_entry():
 
     assert entry['DurationSeconds'] == 0.005
     assert entry['DurationMs'] == 5
+    assert entry['OriginResponseTimeSeconds'] == 0.15
+    assert entry['OriginResponseTimeMs'] == 150
     assert entry['Path'] == '/users/id1337'
     assert entry['PathShape'] == '/users/:userId'
     assert entry['Path_userId'] == 'id1337'
