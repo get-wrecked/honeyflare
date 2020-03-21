@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+import pytest
+
 from honeyflare import get_raw_file_entries, get_sampled_file_entries, enrich_entry, compile_pattern, __version__
 
 
@@ -78,3 +80,17 @@ def test_enrich_entry():
     assert entry['Query_emptyParam'] == ''
     assert entry['Query_regularParam'] == 'paramValue'
     assert entry['UriShape'] == '/users/:userId?emptyParam=?&regularParam=?'
+
+
+@pytest.mark.parametrize('ip,expected_version', [
+    ('1.2.3.4', 4),
+    ('2001:0db8:85a3:0000:0000:8a2e:0370:7334', 6)
+])
+def test_enrich_origin_ip(ip, expected_version):
+    entry = {
+        'OriginIP': ip,
+    }
+
+    enrich_entry(entry, [], None)
+
+    assert entry['OriginIPVersion'] == expected_version
