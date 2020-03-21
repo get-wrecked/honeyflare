@@ -5,8 +5,6 @@ from unittest import mock
 
 import pytest
 from google.api_core.exceptions import NotFound
-from google.cloud import storage
-from urllib3.exceptions import ProtocolError
 
 from honeyflare import download_file, process_bucket_object, __version__
 from honeyflare.exceptions import RetriableError
