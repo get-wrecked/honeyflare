@@ -1,12 +1,17 @@
 import base64
 import os
 import tempfile
+import textwrap
 import urllib.parse
+import zlib
 from pathlib import PurePosixPath
 from collections import namedtuple
 
 import hvac
 import requests
+
+PEM_HEADER = b'-----BEGIN CERTIFICATE-----\n'
+PEM_TRAILER = b'-----END CERTIFICATE-----'
 
 VaultCoordinates = namedtuple('VaultCoordinates', 'scheme netloc mount_point path key ca_cert role')
 
@@ -56,7 +61,7 @@ def parse_vault_url(vault_url):
     ca_cert = None
     b64_ca_cert = parsed_parameters.get('ca')
     if b64_ca_cert:
-        ca_cert = base64.urlsafe_b64decode(b64_ca_cert[0].encode('utf-8'))
+        ca_cert = decode_cacert(b64_ca_cert[0])
 
     vault_url = '%s://%s' % (scheme, parsed_url.netloc)
     role = parsed_parameters.get('role', 'honeyflare')
@@ -82,3 +87,29 @@ def get_auth_jwt(vault_role):
     )
     response.raise_for_status()
     return response.text
+
+
+def encode_cacert(path):
+    # This function is only called by ./tools/build_vault_url.py, keeping it here to keep
+    # it together with the decoder.
+    # PEM certificates are just DER certificates encoded with base64 and some wrapping.
+    # To try to keep url lengths somewhat manageable, compress the DER certificate and
+    # re-encode it with urlsafe base64.
+    with open(path, 'rb') as fh:
+        contents = fh.read().rstrip(b'\n')
+        assert contents.startswith(PEM_HEADER)
+        # Strip possible trailing newlines
+        contents = contents.rstrip(b'\n')
+        assert contents.endswith(PEM_TRAILER)
+        der_cert_base64 = contents[len(PEM_HEADER):-len(PEM_TRAILER)]
+        der_cert = base64.b64decode(der_cert_base64)
+        compressed_der_cert = zlib.compress(der_cert)
+        return base64.urlsafe_b64encode(compressed_der_cert).decode('utf-8').rstrip('=')
+
+
+def decode_cacert(b64_ca_cert):
+    b64_ca_cert += '=' * (-len(b64_ca_cert) % 4) # restore padding
+    compressed_der_cert = base64.urlsafe_b64decode(b64_ca_cert.encode('utf-8'))
+    der_cert = zlib.decompress(compressed_der_cert)
+    pem_body = textwrap.wrap(base64.b64encode(der_cert).decode('utf-8'), width=64)
+    return PEM_HEADER + '\n'.join(pem_body).encode('utf-8') + b'\n' + PEM_TRAILER
