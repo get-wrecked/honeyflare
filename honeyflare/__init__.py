@@ -194,6 +194,11 @@ def enrich_entry(entry, path_patterns, query_param_filter):
         entry['DurationSeconds'] = duration_ms/1000
         entry['DurationMs'] = duration_ms
 
+    origin_response_time_ns = entry.get('OriginResponseTime')
+    if origin_response_time_ns:
+        entry['OriginResponseTimeSeconds'] = origin_response_time_ns/1e9
+        entry['OriginResponseTimeMs'] = origin_response_time_ns/1e6
+
     client_request_uri = entry.get('ClientRequestURI')
     if client_request_uri is not None:
         url_shape = urlshape(client_request_uri, path_patterns, query_param_filter)
