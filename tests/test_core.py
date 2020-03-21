@@ -10,5 +10,3 @@ def test_get_raw_file_entries(test_files):
         '{"eventName": "value1"}\n',
         '{"eventName": "value2"}\n',
     ]
-
-
