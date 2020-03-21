@@ -1,6 +1,5 @@
 import datetime
 import gzip
-import ipaddress
 import json
 import os
 import random
@@ -11,9 +10,10 @@ import threading
 import libhoney
 from google.api_core.exceptions import PreconditionFailed
 
+from . import enrichment
 from .exceptions import RetriableError
 from .locks import GCSLock
-from .urlshape import compile_pattern, urlshape
+from .urlshape import compile_pattern
 from .version import __version__
 
 
@@ -68,7 +68,7 @@ def process_bucket_object(
         for sample_rate, entry in get_sampled_file_entries(local_path, sampling_rate_by_status):
             event = libhoney_client.new_event()
             event.sample_rate = sample_rate
-            enrich_entry(entry, compiled_patterns, query_param_filter)
+            enrichment.enrich_entry(entry, compiled_patterns, query_param_filter)
             event.add(entry)
             event.created_at = datetime.datetime.utcfromtimestamp(entry['EdgeEndTimestamp']/1e9)
             event.send_presampled()
@@ -174,58 +174,3 @@ def get_sampled_file_entries(input_file, sampling_rate_by_status):
 def get_raw_file_entries(input_file):
     with gzip.open(input_file, 'rt') as fh:
         yield from fh
-
-
-def enrich_entry(entry, path_patterns, query_param_filter):
-    '''
-    :param entry: A dictionary with the log entry fields.
-    :param path_patterns: A list of `.urlshape.Pattern` for known path patterns
-        to parse.
-    '''
-    # Which fields are included will vary depending on the logging config, thus don't
-    # assume anything
-    edge_end_timestamp = entry.get('EdgeEndTimestamp')
-    edge_start_timestamp = entry.get('EdgeStartTimestamp')
-    if edge_end_timestamp is not None and edge_start_timestamp is not None:
-        enrich_duration(entry, edge_start_timestamp, edge_end_timestamp)
-
-    origin_response_time_ns = entry.get('OriginResponseTime')
-    if origin_response_time_ns:
-        enrich_origin_response_time(entry, origin_response_time_ns)
-
-    origin_ip = entry.get('OriginIP')
-    if origin_ip is not None:
-        enrich_origin_ip(entry, origin_ip)
-
-    client_request_uri = entry.get('ClientRequestURI')
-    if client_request_uri is not None:
-        enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter)
-
-
-def enrich_duration(entry, start_ns, end_ns):
-    duration_ms = (end_ns - start_ns)/1e6
-    entry['DurationSeconds'] = duration_ms/1000
-    entry['DurationMs'] = duration_ms
-
-
-def enrich_origin_response_time(entry, origin_response_time_ns):
-    entry['OriginResponseTimeSeconds'] = origin_response_time_ns/1e9
-    entry['OriginResponseTimeMs'] = origin_response_time_ns/1e6
-
-
-def enrich_origin_ip(entry, origin_ip):
-    parsed_ip = ipaddress.ip_address(origin_ip)
-    entry['OriginIPVersion'] = parsed_ip.version
-
-
-def enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter):
-    url_shape = urlshape(client_request_uri, path_patterns, query_param_filter)
-    entry['Path'] = url_shape.path
-    entry['PathShape'] = url_shape.path_shape
-    entry['Query'] = url_shape.query
-    entry['QueryShape'] = url_shape.query_shape
-    entry['UriShape'] = url_shape.uri_shape
-    for path_param, value in url_shape.path_params.items():
-        entry['Path_' + path_param] = value
-    for query_param, value in url_shape.query_params.items():
-        entry['Query_' + query_param] = value
