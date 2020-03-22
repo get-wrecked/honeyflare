@@ -41,6 +41,25 @@ def test_get_sampled_lines():
     assert lines_by_status[503] == 200
 
 
+def test_get_sample_default():
+    lines = []
+    for _ in range(10):
+        lines.append('{"EdgeResponseStatus": 200}')
+        lines.append('{"EdgeResponseStatus": 300}')
+
+    sampler = Sampler()
+    entries = list(t[1] for t in sampler.sample_lines(lines, {
+        200: 1,
+    }))
+
+    lines_by_status = defaultdict(int)
+    for entry in entries:
+        lines_by_status[entry['EdgeResponseStatus']] += 1
+
+    assert lines_by_status[200] == 10
+    assert lines_by_status[300] == 10
+
+
 def test_noop_head_sampling():
     lines = []
     for _ in range(50):
