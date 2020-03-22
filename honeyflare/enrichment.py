@@ -20,9 +20,9 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     if origin_response_time_ns:
         enrich_origin_response_time(entry, origin_response_time_ns)
 
-    origin_ip = entry.get('OriginIP')
-    if origin_ip is not None:
-        enrich_origin_ip(entry, origin_ip)
+    client_ip = entry.get('ClientIP')
+    if client_ip is not None:
+        enrich_client_ip(entry, client_ip)
 
     client_request_uri = entry.get('ClientRequestURI')
     if client_request_uri is not None:
@@ -40,9 +40,9 @@ def enrich_origin_response_time(entry, origin_response_time_ns):
     entry['OriginResponseTimeMs'] = origin_response_time_ns/1e6
 
 
-def enrich_origin_ip(entry, origin_ip):
-    parsed_ip = ipaddress.ip_address(origin_ip)
-    entry['OriginIPVersion'] = parsed_ip.version
+def enrich_client_ip(entry, client_ip):
+    parsed_ip = ipaddress.ip_address(client_ip)
+    entry['ClientIPVersion'] = parsed_ip.version
 
 
 def enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter):

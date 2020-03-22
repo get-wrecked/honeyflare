@@ -38,11 +38,11 @@ def test_enrich_entry():
     ('1.2.3.4', 4),
     ('2001:0db8:85a3:0000:0000:8a2e:0370:7334', 6)
 ])
-def test_enrich_origin_ip(ip, expected_version):
+def test_enrich_client_ip(ip, expected_version):
     entry = {
-        'OriginIP': ip,
+        'ClientIP': ip,
     }
 
     enrich_entry(entry, [], None)
 
-    assert entry['OriginIPVersion'] == expected_version
+    assert entry['ClientIPVersion'] == expected_version
