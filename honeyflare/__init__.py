@@ -64,15 +64,15 @@ def process_bucket_object(
         local_path = download_file(bucket, object_name)
 
         sampler = Sampler()
-        with get_raw_file_entries(local_path) as source:
-            for sample_rate, entry in sampler.sample_lines(source, sampling_rate_by_status):
-                event = libhoney_client.new_event()
-                event.sample_rate = sample_rate
-                enrichment.enrich_entry(entry, compiled_patterns, query_param_filter)
-                event.add(entry)
-                event.created_at = datetime.datetime.utcfromtimestamp(entry['EdgeEndTimestamp']/1e9)
-                event.send_presampled()
-                total_events += 1
+        source = get_raw_file_entries(local_path)
+        for sample_rate, entry in sampler.sample_lines(source, sampling_rate_by_status):
+            event = libhoney_client.new_event()
+            event.sample_rate = sample_rate
+            enrichment.enrich_entry(entry, compiled_patterns, query_param_filter)
+            event.add(entry)
+            event.created_at = datetime.datetime.utcfromtimestamp(entry['EdgeEndTimestamp']/1e9)
+            event.send_presampled()
+            total_events += 1
 
         libhoney_client.close()
         os.remove(local_path)
