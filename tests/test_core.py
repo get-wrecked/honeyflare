@@ -1,12 +1,6 @@
 from collections import defaultdict
-from unittest import mock
 
-import pytest
-from urllib3.exceptions import ProtocolError
-
-from honeyflare import (download_file, get_raw_file_entries, get_sampled_file_entries,
-    enrich_entry, compile_pattern, __version__)
-from honeyflare.exceptions import RetriableError
+from honeyflare import get_raw_file_entries, get_sampled_file_entries, enrich_entry, compile_pattern, __version__
 
 
 def test_get_raw_file_entries(test_files):
@@ -16,14 +10,6 @@ def test_get_raw_file_entries(test_files):
         '{"eventName": "value1"}\n',
         '{"eventName": "value2"}\n',
     ]
-
-
-def test_download_raises_retriable_exception(bucket):
-    with mock.patch('google.cloud.storage.blob.RawDownload') as download_mock:
-        # Some random urllib3 exception
-        download_mock.return_value.consume.side_effect = ProtocolError()
-        with pytest.raises(RetriableError):
-            ret = download_file(bucket, 'foo')
 
 
 def test_get_sampled_file_entries(test_files):

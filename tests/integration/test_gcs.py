@@ -1,13 +1,15 @@
 import base64
 import datetime
 import os
-import unittest.mock as mock
+from unittest import mock
 
 import pytest
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
+from urllib3.exceptions import ProtocolError
 
-from honeyflare import process_bucket_object, __version__
+from honeyflare import download_file, process_bucket_object, __version__
+from honeyflare.exceptions import RetriableError
 
 
 pytestmark = pytest.mark.integration
@@ -82,6 +84,14 @@ def test_process_repeated_file(bucket, test_files, blob_name):
 
         # Should have only processed the event the first time
         assert mock_client.return_value.new_event.call_count == 1
+
+
+def test_download_raises_retriable_exception(bucket):
+    with mock.patch('google.cloud.storage.blob.RawDownload') as download_mock:
+        # Some random urllib3 exception
+        download_mock.return_value.consume.side_effect = ProtocolError()
+        with pytest.raises(RetriableError):
+            ret = download_file(bucket, 'foo')
 
 
 @pytest.fixture
