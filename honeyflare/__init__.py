@@ -9,6 +9,7 @@ import threading
 
 import libhoney
 from google.api_core.exceptions import PreconditionFailed
+from urllib3.exceptions import HTTPError
 
 from .exceptions import RetriableError
 from .locks import GCSLock
@@ -128,7 +129,10 @@ def _processed_blob(bucket, object_name):
 def download_file(bucket, object_name):
     blob = bucket.blob(object_name)
     local_path = '/tmp/' + os.path.basename(object_name)
-    blob.download_to_filename(local_path, raw_download=True)
+    try:
+        blob.download_to_filename(local_path, raw_download=True)
+    except HTTPError as e:
+        raise RetriableError() from e
     return local_path
 
 
