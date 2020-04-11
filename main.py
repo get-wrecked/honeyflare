@@ -84,7 +84,7 @@ def main(event, context):
         # Hard exit to make sure this is retried
         meta_event.add_field('error', err.__class__.__name__)
         meta_event.add_field('error_message', str(err))
-        sys.exit(1)
+        raise
     except Exception as err: # pylint: disable=broad-except
         # Swallow these but make sure they are logged and reported so that we can fix them
         traceback.print_exc()
