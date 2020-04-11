@@ -25,9 +25,16 @@ def main():
     source = get_raw_file_entries(args.file)
     compiled_patterns = [compile_pattern(p) for p in args.patterns]
     total_events = 0
+    previous = None
     for sample_rate, entry in sampler.sample_lines(source, args.sample_by_status):
         event = {}
         event['sample_rate'] = sample_rate
+        if previous:
+            if entry['EdgeEndTimestamp'] < previous['EdgeEndTimestamp']:
+                print('Found %s after %s' % (previous['EdgeEndTimestamp']/1e9, entry['EdgeEndTimestamp']/1e9))
+
+        previous = entry
+
         enrichment.enrich_entry(entry, compiled_patterns, args.query_param_filter)
         event['data'] = entry
         raw_end = entry['EdgeEndTimestamp']/1e9

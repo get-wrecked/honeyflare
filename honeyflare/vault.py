@@ -44,6 +44,7 @@ def get_vault_secret(vault_url):
     )
 
     # Clean up to not affect other https queries
+    # TODO: This should restore any prior value that was here
     del os.environ['REQUESTS_CA_BUNDLE']
 
     return honeycomb_key['data']['data'][vault_coordinates.key]

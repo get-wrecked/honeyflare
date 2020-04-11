@@ -66,6 +66,7 @@ def process_bucket_object(
         sampler = Sampler()
         source = get_raw_file_entries(local_path)
         for sample_rate, entry in sampler.sample_lines(source, sampling_rate_by_status):
+            # Apply tail sampling here too before enrichment, process in batches
             event = libhoney_client.new_event()
             event.sample_rate = sample_rate
             enrichment.enrich_entry(entry, compiled_patterns, query_param_filter)
@@ -135,4 +136,8 @@ def download_file(bucket, object_name):
 
 def get_raw_file_entries(input_file):
     with gzip.open(input_file, 'rt') as fh:
-        yield from fh
+        for line in fh:
+            # This gets the current position in the gzipped file which we use to estimate
+            # how large of a share of the total file this batch represents.
+            yield fh.buffer.fileobj.tell(),line
+        # yield from fh
