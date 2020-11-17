@@ -1,8 +1,9 @@
-import json
 import math
 import random
 import re
 import time
+
+import orjson
 
 
 STATUS_CODE_RE = re.compile(r'"EdgeResponseStatus":\s?(\d{3})')
@@ -26,7 +27,7 @@ class Sampler():
                 continue
 
             if sampling_rate == 1:
-                yield sampling_rate, json.loads(line)
+                yield sampling_rate, orjson.loads(line)
                 continue
 
             match = ORIGIN_RESPONSE_TIME_RE.search(line)
@@ -40,7 +41,7 @@ class Sampler():
                     sampling_rate = 1
 
             if random.randint(1, sampling_rate) == 1:
-                yield sampling_rate, json.loads(line)
+                yield sampling_rate, orjson.loads(line)
 
 
 
