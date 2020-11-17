@@ -2,9 +2,11 @@ import json
 import math
 import random
 import re
+import time
 
 
 STATUS_CODE_RE = re.compile(r'"EdgeResponseStatus":\s?(\d{3})')
+ORIGIN_RESPONSE_TIME_RE = re.compile(r'"OriginResponseTime":\s?(\d+)')
 
 
 class Sampler():
@@ -26,6 +28,16 @@ class Sampler():
             if sampling_rate == 1:
                 yield sampling_rate, json.loads(line)
                 continue
+
+            match = ORIGIN_RESPONSE_TIME_RE.search(line)
+            response_time = int(match.group(1)) if match else 0
+
+            # Treat any request slower than 1s as an error
+            if response_time > 1e9:
+                if head_sampling_rate_by_status:
+                    sampling_rate = head_sampling_rate_by_status.get(500, 1)
+                else:
+                    sampling_rate = 1
 
             if random.randint(1, sampling_rate) == 1:
                 yield sampling_rate, json.loads(line)

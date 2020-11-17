@@ -60,6 +60,20 @@ def test_get_sample_default():
     assert lines_by_status[300] == 10
 
 
+def test_slow_request_sampling():
+    lines = []
+    for _ in range(50):
+        lines.append('{"EdgeResponseStatus": 200, "OriginResponseTime": %d}' % (1500*1e6))
+
+    sampler = Sampler()
+    entries = list(sampler.sample_lines(lines, {
+        200: 100,
+        500: 1,
+    }))
+
+    assert len(entries) == 50
+
+
 def test_noop_head_sampling():
     lines = []
     for _ in range(50):
