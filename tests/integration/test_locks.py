@@ -3,11 +3,10 @@ import base64
 import unittest.mock as mock
 
 import pytest
-from google.cloud import storage
+from google.api_core.exceptions import NotFound
 
 from honeyflare import locks
 from honeyflare.exceptions import FileLockedError
-from google.api_core.exceptions import NotFound
 
 
 pytestmark = pytest.mark.integration
