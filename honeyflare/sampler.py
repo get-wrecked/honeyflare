@@ -1,8 +1,10 @@
 import random
 import re
 import sys
+import math
 
 import orjson
+import cachetools
 
 
 STATUS_CODE_RE = re.compile(r'"EdgeResponseStatus":\s?(\d{3})')
@@ -10,11 +12,29 @@ ORIGIN_RESPONSE_TIME_RE = re.compile(r'"OriginResponseTime":\s?(\d+)')
 
 
 class Sampler():
-    def sample_lines(self, line_iterator, head_sampling_rate_by_status):
+    def sample_lines(self, line_iterator, head_sampling_rate_by_status, dynamic_sampling_fields):
         '''
         Applies head sampling to a line-based iterator.
         '''
-        for line in line_iterator:
+        key_counts = cachetools.LFUCache(250)
+        key_rates = cachetools.LFUCache(250)
+
+        def update_rates():
+            total_events = sum(key_counts.values())
+            total_log = sum(math.log(v) for v in key_counts.values())
+            target_rate = total_events/50
+            target_ratio = target_rate/total_log
+            key_rates.clear()
+            for key, val in key_counts.items():
+                key_goal = int(max(1, math.log(val) * target_ratio))
+                key_rates[key] = key_goal
+
+            # import pdb; pdb.set_trace()
+            key_counts.clear()
+
+
+
+        for line_count, line in enumerate(line_iterator, 1):
             # Use regex to extract status first to not incur the overhead of json
             # parsing on lines we'll skip
             sampling_rate = 1
@@ -25,9 +45,10 @@ class Sampler():
             if sampling_rate == 0:
                 continue
 
-            if sampling_rate == 1:
-                yield sampling_rate, orjson.loads(line)
-                continue
+            # if sampling_rate == 1:
+            #     yield sampling_rate, orjson.loads(line)
+            #     continue
+
 
             match = ORIGIN_RESPONSE_TIME_RE.search(line)
             response_time = int(match.group(1)) if match else 0
@@ -39,8 +60,17 @@ class Sampler():
                 else:
                     sampling_rate = 1
 
+            data = orjson.loads(line)
+            key = tuple(data[k] for k in dynamic_sampling_fields)
+            key_count = key_counts.get(key, 0)
+            key_counts[key] = key_count + 1
+            sampling_rate = key_rates.get(key, 1)
+
+            if line_count % 1000 == 0:
+                update_rates()
+
             if random.randint(1, sampling_rate) == 1:
-                yield sampling_rate, orjson.loads(line)
+                yield sampling_rate, data
 
 
 
