@@ -1,0 +1,28 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+
+      - name: Cache venv
+        uses: actions/cache@v1
+        with:
+          path: venv
+          key: ${{ runner.os }}-venv-${{ hashFiles('*requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-
+
+      - name: Configure
+        run: ./configure
+
+      - name: Run tests
+        run: ./test
