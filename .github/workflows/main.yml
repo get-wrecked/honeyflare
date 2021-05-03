@@ -11,10 +11,10 @@ jobs:
       - name: Install python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: '3.9'
 
       - name: Cache venv
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: venv
           key: ${{ runner.os }}-venv-${{ hashFiles('*requirements.txt') }}
