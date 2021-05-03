@@ -5,20 +5,13 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python:
-            # Run for all runtimes supported by cloud functions
-            - '3.7'
-            - '3.8'
-            - '3.9'
     steps:
       - uses: actions/checkout@v2
 
       - name: Install python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.9'
 
       - name: Cache venv
         uses: actions/cache@v2
@@ -26,7 +19,7 @@ jobs:
           path: venv
           key: ${{ runner.os }}-venv-${{ hashFiles('*requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.python }}-venv-
+            ${{ runner.os }}-venv-
 
       - name: Configure
         run: ./configure
