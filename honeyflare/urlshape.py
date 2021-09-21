@@ -19,7 +19,7 @@ UrlShape = namedtuple('UrlShape', [
 def compile_pattern(path_pattern):
     '''
     :param path_patterns: A list of patterns like `/user/:userId/`
-    :return: A list of `Pattern`s which canbe passed to `urlshape` later.
+    :return: A list of `Pattern`s which can be passed to `urlshape` later.
     '''
     regex_parts = []
     path = PurePosixPath(path_pattern)
