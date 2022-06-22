@@ -24,6 +24,7 @@ def process_bucket_object(
         object_name,
         honeycomb_dataset,
         honeycomb_key,
+        honeycomb_api='https://api.honeycomb.io',
         patterns=None,
         query_param_filter=None,
         sampling_rate_by_status=None,
@@ -52,7 +53,7 @@ def process_bucket_object(
         lock_bucket = bucket
 
     compiled_patterns = [compile_pattern(p) for p in patterns or []]
-    libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset)
+    libhoney_client = create_libhoney_client(honeycomb_key, honeycomb_dataset, honeycomb_api)
 
     lock = GCSLock(lock_bucket, 'locks/%s' % object_name)
     total_events = 0
@@ -81,12 +82,13 @@ def process_bucket_object(
     return total_events
 
 
-def create_libhoney_client(writekey, dataset):
+def create_libhoney_client(writekey, dataset, honeycomb_api):
     client = libhoney.Client(
         writekey=writekey,
         dataset=dataset,
         block_on_send=True,
         user_agent_addition='honeyflare/%s' % __version__,
+        api_host=honeycomb_api,
     )
     client.add_field('MetaProcessor', 'honeyflare/%s' % __version__)
 

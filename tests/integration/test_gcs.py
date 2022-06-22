@@ -40,11 +40,13 @@ def test_process_file(bucket, test_files, blob_name):
     with mock.patch('libhoney.Client') as mock_client:
         mock_event = mock_client.return_value.new_event.return_value
 
-        process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key', patterns, set())
+        process_bucket_object(bucket, blob_name, 'test-dataset', 'test-key',
+            patterns=patterns, query_param_filter=set())
 
         mock_client.assert_called_with(
             writekey='test-key',
             dataset='test-dataset',
+            api_host='https://api.honeycomb.io',
             block_on_send=True,
             user_agent_addition='honeyflare/%s' % __version__,
         )

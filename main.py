@@ -36,6 +36,8 @@ patterns = os.environ.get('PATTERNS')
 if patterns is not None:
     patterns = json.loads(patterns)
 
+honeycomb_api = os.environ.get('HONEYCOMB_API', 'https://api.honeycomb.io')
+
 query_param_filter = os.environ.get('QUERY_PARAM_FILTER')
 if query_param_filter is not None:
     query_param_filter = set(json.loads(query_param_filter))
@@ -61,7 +63,7 @@ def main(event, context):
     if honeycomb_key.startswith('vault://'):
         honeycomb_key = vault.get_vault_secret(honeycomb_key)
 
-    meta_client = create_libhoney_client(honeycomb_key, honeycomb_meta_dataset)
+    meta_client = create_libhoney_client(honeycomb_key, honeycomb_meta_dataset, honeycomb_api)
     meta_event = meta_client.new_event()
     instrument_invocation(meta_event, event, context)
 
@@ -73,6 +75,7 @@ def main(event, context):
             event['name'],
             honeycomb_dataset,
             honeycomb_key,
+            honeycomb_api,
             patterns=patterns,
             query_param_filter=query_param_filter,
             lock_bucket=lock_bucket,
