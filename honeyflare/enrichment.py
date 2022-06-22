@@ -29,20 +29,12 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     if client_request_uri is not None:
         enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter)
 
-    # Cloudflare says the RayId should be unique, thus it should be unique also when padded to form a full uuid
     ray_id = entry.get('RayId')
-    if ray_id is not None:
-        entry['trace.span_id'] = uuid.UUID('0000000000000000' + ray_id)
-    else:
-        entry['trace.span_id'] = str(uuid.uuid4())
-
     parent_ray_id = entry.get('ParentRayId')
-    if parent_ray_id is not None and parent_ray_id != '00':
-        entry['trace.trace_id'] = uuid.UUID('0000000000000000' + parent_ray_id)
-    else:
-        entry['trace.trace_id'] = str(uuid.uuid4())
 
     # Required fields for otel compatibility
+    entry['trace.trace_id'] = get_trace_id(ray_id, parent_ray_id)
+    entry['trace.span_id'] = str(uuid.uuid4())
     entry['service.name'] = 'cloudflare'
     entry['name'] = 'HTTP %s' % entry.get('ClientRequestMethod', 'N/A')
 
@@ -51,6 +43,19 @@ def enrich_duration(entry, start_ns, end_ns):
     duration_ms = (end_ns - start_ns)/1e6
     entry['DurationSeconds'] = duration_ms/1000
     entry['DurationMs'] = duration_ms
+
+
+def get_trace_id(ray_id, parent_ray_id):
+    # Cloudflare says the RayId should be unique, thus it should be unique also when
+    # padded to form a full uuid. Use this to set a trace id so that all requests
+    # originating from a worker end up in the same trace (worker requests have a parent
+    # ray id)
+    if parent_ray_id is not None and parent_ray_id != '00':
+        return str(uuid.UUID('0000000000000000' + parent_ray_id))
+    elif ray_id is not None:
+        return str(uuid.UUID('0000000000000000' + ray_id))
+    else:
+        return str(uuid.uuid4())
 
 
 def enrich_origin_response_time(entry, origin_response_time_ns):

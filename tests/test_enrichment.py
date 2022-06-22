@@ -37,7 +37,7 @@ def test_enrich_entry():
     assert entry['Query_emptyParam'] == ''
     assert entry['Query_regularParam'] == 'paramValue'
     assert entry['UriShape'] == '/users/:userId?emptyParam=?&regularParam=?'
-    assert entry['trace.span_id'] == uuid.UUID('00000000000000006f2de346beec9644')
+    assert entry['trace.trace_id'] == str(uuid.UUID('00000000000000006f2de346beec9644'))
     assert uuid.UUID(entry['trace.trace_id'])
     assert entry['name'] == 'HTTP POST'
 
