@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from honeyflare import compile_pattern
@@ -11,6 +13,9 @@ def test_enrich_entry():
         'EdgeStartTimestamp': 1582850070112000000,
         'EdgeRequestHost': 'example.com',
         'OriginResponseTime': 150*1e6,
+        'RayId': '6f2de346beec9644',
+        'ParentRayId': '00',
+        'ClientRequestMethod': 'POST',
     }
 
     patterns = [compile_pattern(p) for p in [
@@ -32,6 +37,9 @@ def test_enrich_entry():
     assert entry['Query_emptyParam'] == ''
     assert entry['Query_regularParam'] == 'paramValue'
     assert entry['UriShape'] == '/users/:userId?emptyParam=?&regularParam=?'
+    assert entry['trace.span_id'] == uuid.UUID('00000000000000006f2de346beec9644')
+    assert uuid.UUID(entry['trace.trace_id'])
+    assert entry['name'] == 'HTTP POST'
 
 
 @pytest.mark.parametrize('ip,expected_version', [

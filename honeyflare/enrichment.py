@@ -1,4 +1,5 @@
 import ipaddress
+import uuid
 
 from .urlshape import urlshape
 
@@ -27,6 +28,23 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     client_request_uri = entry.get('ClientRequestURI')
     if client_request_uri is not None:
         enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter)
+
+    # Cloudflare says the RayId should be unique, thus it should be unique also when padded to form a full uuid
+    ray_id = entry.get('RayId')
+    if ray_id is not None:
+        entry['trace.span_id'] = uuid.UUID('0000000000000000' + ray_id)
+    else:
+        entry['trace.span_id'] = str(uuid.uuid4())
+
+    parent_ray_id = entry.get('ParentRayId')
+    if parent_ray_id is not None and parent_ray_id != '00':
+        entry['trace.trace_id'] = uuid.UUID('0000000000000000' + parent_ray_id)
+    else:
+        entry['trace.trace_id'] = str(uuid.uuid4())
+
+    # Required fields for otel compatibility
+    entry['service.name'] = 'cloudflare'
+    entry['name'] = 'HTTP %s' % entry.get('ClientRequestMethod', 'N/A')
 
 
 def enrich_duration(entry, start_ns, end_ns):
