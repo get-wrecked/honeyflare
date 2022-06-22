@@ -6,12 +6,6 @@ from google.api_core.exceptions import PreconditionFailed, NotFound
 from .exceptions import FileLockedError
 
 
-# Patch generation match preconditions onto the requests since the python
-# libraries doesn't expose this functionality
-# Ref. https://github.com/googleapis/google-cloud-python/issues/4490
-storage.blob._MULTIPART_URL_TEMPLATE += '&ifGenerationMatch=0'
-storage.blob._RESUMABLE_URL_TEMPLATE += '&ifGenerationMatch=0'
-
 # The max execution time for a Google Cloud Function is 9 minutes, but an
 # instance might keep a timed out invocation in memory for longer, resuming it
 # when it's invoked again. To minimize the odds this happens, make the lock
@@ -38,7 +32,7 @@ class GCSLock():
 def lock(bucket, lock_name):
     blob = bucket.blob(lock_name)
     try:
-        blob.upload_from_string(b'')
+        blob.upload_from_string(b'', if_generation_match=0)
         return True
     except PreconditionFailed:
         # Check that the lock was created recently (ie the creator function
@@ -54,7 +48,7 @@ def lock(bucket, lock_name):
 
             # Retry acuiring the lock
             try:
-                blob.upload_from_string(b'')
+                blob.upload_from_string(b'', if_generation_match=0)
                 return True
             except PreconditionFailed:
                 pass
