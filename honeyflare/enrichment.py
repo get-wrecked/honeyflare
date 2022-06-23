@@ -29,8 +29,8 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     if client_request_uri is not None:
         enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter)
 
-    ray_id = entry.get('RayId')
-    parent_ray_id = entry.get('ParentRayId')
+    ray_id = entry.get('RayID')
+    parent_ray_id = entry.get('ParentRayID')
 
     # Required fields for otel compatibility
     entry['trace.trace_id'] = get_trace_id(ray_id, parent_ray_id)

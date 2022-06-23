@@ -13,8 +13,8 @@ def test_enrich_entry():
         'EdgeStartTimestamp': 1582850070112000000,
         'EdgeRequestHost': 'example.com',
         'OriginResponseTime': 150*1e6,
-        'RayId': '6f2de346beec9644',
-        'ParentRayId': '00',
+        'RayID': '6f2de346beec9644',
+        'ParentRayID': '00',
         'ClientRequestMethod': 'POST',
     }
 
