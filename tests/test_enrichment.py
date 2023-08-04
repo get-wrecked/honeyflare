@@ -45,6 +45,62 @@ def test_enrich_entry():
     assert entry["name"] == "HTTP POST"
 
 
+def test_enrich_path_shape_explicit_trailing_slash():
+    entry = {
+        "ClientRequestURI": "/users/id1337/",
+        "EdgeEndTimestamp": 1582850070117000000,
+        "EdgeStartTimestamp": 1582850070112000000,
+        "EdgeRequestHost": "example.com",
+        "OriginResponseTime": 150 * 1e6,
+        "RayId": "6f2de346beec9644",
+        "ParentRayId": "00",
+        "ClientRequestMethod": "POST",
+    }
+
+    patterns = [
+        compile_pattern(p)
+        for p in [
+            "/users/:userId/",
+        ]
+    ]
+    enrich_entry(entry, patterns, None)
+
+    assert entry["Path"] == "/users/id1337/"
+    assert entry["PathShape"] == "/users/:userId/"
+
+    # Without the trailing slash it should no longer match
+
+    entry["ClientRequestURI"] = "/users/id1337"
+    enrich_entry(entry, patterns, None)
+
+    assert entry["Path"] == "/users/id1337"
+    assert entry["PathShape"] == "/users/id1337"
+
+
+def test_enrich_path_shape_implicit_trailing_slash():
+    entry = {
+        "ClientRequestURI": "/users/id1337/",
+        "EdgeEndTimestamp": 1582850070117000000,
+        "EdgeStartTimestamp": 1582850070112000000,
+        "EdgeRequestHost": "example.com",
+        "OriginResponseTime": 150 * 1e6,
+        "RayId": "6f2de346beec9644",
+        "ParentRayId": "00",
+        "ClientRequestMethod": "POST",
+    }
+
+    patterns = [
+        compile_pattern(p)
+        for p in [
+            "/users/:userId",
+        ]
+    ]
+    enrich_entry(entry, patterns, None)
+
+    assert entry["Path"] == "/users/id1337/"
+    assert entry["PathShape"] == "/users/:userId"
+
+
 @pytest.mark.parametrize(
     "ip,expected_version",
     [("1.2.3.4", 4), ("2001:0db8:85a3:0000:0000:8a2e:0370:7334", 6)],

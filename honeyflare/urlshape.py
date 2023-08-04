@@ -35,6 +35,13 @@ def compile_pattern(path_pattern):
     if path_pattern.endswith("*"):
         regex_parts.append(".*")
 
+    if path_pattern.endswith("/"):
+        # Trailing slash required for matching if given in the rule, otherwise we'll
+        # match both with and without
+        regex_parts.append("/")
+    else:
+        regex_parts.append("/?")
+
     regex = re.compile("^" + "".join(regex_parts) + "$")
     return Pattern(path_pattern, regex)
 
