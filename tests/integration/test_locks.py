@@ -39,7 +39,7 @@ def test_old_lock_is_deleted(bucket, lock_name):
     lock = locks.GCSLock(bucket, lock_name)
     invalidated_lock = False
     with lock:
-        with mock.patch('honeyflare.locks.IGNORE_LOCK_TIMEOUT_SECONDS', -1):
+        with mock.patch("honeyflare.locks.IGNORE_LOCK_TIMEOUT_SECONDS", -1):
             other_lock = locks.GCSLock(bucket, lock_name)
             with other_lock:
                 invalidated_lock = True
@@ -48,7 +48,9 @@ def test_old_lock_is_deleted(bucket, lock_name):
 
 @pytest.fixture
 def lock_name(bucket):
-    lock_name = 'honeyflare-test-' + base64.urlsafe_b64encode(os.urandom(8)).decode('utf-8')
+    lock_name = "honeyflare-test-" + base64.urlsafe_b64encode(os.urandom(8)).decode(
+        "utf-8"
+    )
     try:
         yield lock_name
     finally:

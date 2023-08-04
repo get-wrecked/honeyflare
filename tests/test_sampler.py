@@ -16,19 +16,25 @@ def test_get_sampled_lines():
         lines.append('{"EdgeResponseStatus": 503}')
 
     sampler = Sampler()
-    entries = list(t[1] for t in sampler.sample_lines(lines, {
-        200: 2,
-        201: 5,
-        300: 6,
-        400: 4,
-        404: 0,
-        500: 3,
-        503: 1,
-    }))
+    entries = list(
+        t[1]
+        for t in sampler.sample_lines(
+            lines,
+            {
+                200: 2,
+                201: 5,
+                300: 6,
+                400: 4,
+                404: 0,
+                500: 3,
+                503: 1,
+            },
+        )
+    )
 
     lines_by_status = defaultdict(int)
     for entry in entries:
-        lines_by_status[entry['EdgeResponseStatus']] += 1
+        lines_by_status[entry["EdgeResponseStatus"]] += 1
 
     # Expected ranges computed with ./tools/expected-success.py 200 <sample rate>
     # to get a range that will pass the test in 99.99% of runs
@@ -48,13 +54,19 @@ def test_get_sample_default():
         lines.append('{"EdgeResponseStatus": 300}')
 
     sampler = Sampler()
-    entries = list(t[1] for t in sampler.sample_lines(lines, {
-        200: 1,
-    }))
+    entries = list(
+        t[1]
+        for t in sampler.sample_lines(
+            lines,
+            {
+                200: 1,
+            },
+        )
+    )
 
     lines_by_status = defaultdict(int)
     for entry in entries:
-        lines_by_status[entry['EdgeResponseStatus']] += 1
+        lines_by_status[entry["EdgeResponseStatus"]] += 1
 
     assert lines_by_status[200] == 10
     assert lines_by_status[300] == 10
@@ -63,13 +75,20 @@ def test_get_sample_default():
 def test_slow_request_sampling():
     lines = []
     for _ in range(50):
-        lines.append('{"EdgeResponseStatus": 200, "OriginResponseTime": %d}' % (1500*1e6))
+        lines.append(
+            '{"EdgeResponseStatus": 200, "OriginResponseTime": %d}' % (1500 * 1e6)
+        )
 
     sampler = Sampler()
-    entries = list(sampler.sample_lines(lines, {
-        200: 100,
-        500: 1,
-    }))
+    entries = list(
+        sampler.sample_lines(
+            lines,
+            {
+                200: 100,
+                500: 1,
+            },
+        )
+    )
 
     assert len(entries) == 50
 

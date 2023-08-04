@@ -3,24 +3,24 @@ import numbers
 import re
 
 
-NEEDS_QUOTES_RE = re.compile(r'[\s=]')
+NEEDS_QUOTES_RE = re.compile(r"[\s=]")
 
 
-def format(data): # pylint: disable=redefined-builtin
-    return ' '.join(format_key_value_pair(key, val) for (key, val) in data.items())
+def format(data):  # pylint: disable=redefined-builtin
+    return " ".join(format_key_value_pair(key, val) for (key, val) in data.items())
 
 
 def format_key_value_pair(key, value):
     if value is None:
-        value = ''
+        value = ""
     elif value is True:
-        value = 'true'
+        value = "true"
     elif value is False:
-        value = 'false'
+        value = "false"
     elif isinstance(value, numbers.Integral):
         value = str(value)
     elif isinstance(value, numbers.Real):
-        value = '%.4f' % value
+        value = "%.4f" % value
     else:
         value = str(value)
 
@@ -29,4 +29,4 @@ def format_key_value_pair(key, value):
     if should_quote:
         value = '"%s"' % value
 
-    return '%s=%s' % (key, value)
+    return "%s=%s" % (key, value)

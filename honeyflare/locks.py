@@ -13,17 +13,15 @@ from .exceptions import FileLockedError
 IGNORE_LOCK_TIMEOUT_SECONDS = 7200
 
 
-class GCSLock():
+class GCSLock:
     def __init__(self, bucket, lock_name):
         self.bucket = bucket
         self.lock_name = lock_name
-
 
     def __enter__(self):
         if not lock(self.bucket, self.lock_name):
             raise FileLockedError()
         return self
-
 
     def __exit__(self, *args):
         unlock(self.bucket, self.lock_name)
@@ -32,7 +30,7 @@ class GCSLock():
 def lock(bucket, lock_name):
     blob = bucket.blob(lock_name)
     try:
-        blob.upload_from_string(b'', if_generation_match=0)
+        blob.upload_from_string(b"", if_generation_match=0)
         return True
     except PreconditionFailed:
         # Check that the lock was created recently (ie the creator function
@@ -48,7 +46,7 @@ def lock(bucket, lock_name):
 
             # Retry acuiring the lock
             try:
-                blob.upload_from_string(b'', if_generation_match=0)
+                blob.upload_from_string(b"", if_generation_match=0)
                 return True
             except PreconditionFailed:
                 pass
