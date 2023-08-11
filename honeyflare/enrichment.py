@@ -34,7 +34,9 @@ def enrich_entry(entry, path_patterns, query_param_filter):
 
     # Required fields for otel compatibility
     entry["trace.trace_id"] = get_trace_id(ray_id, parent_ray_id)
-    entry["trace.span_id"] = str(uuid.uuid4())
+    entry["trace.span_id"] = uuid_from_ray_id(ray_id) if ray_id else str(uuid.uuid4())
+    if parent_ray_id and parent_ray_id != "00":
+        entry["trace.parent_id"] = uuid_from_ray_id(parent_ray_id)
     entry["service.name"] = "cloudflare"
     entry["name"] = "HTTP %s" % entry.get("ClientRequestMethod", "N/A")
 
@@ -51,11 +53,15 @@ def get_trace_id(ray_id, parent_ray_id):
     # originating from a worker end up in the same trace (worker requests have a parent
     # ray id)
     if parent_ray_id is not None and parent_ray_id != "00":
-        return str(uuid.UUID("0000000000000000" + parent_ray_id))
+        return uuid_from_ray_id(parent_ray_id)
     elif ray_id is not None:
-        return str(uuid.UUID("0000000000000000" + ray_id))
+        return uuid_from_ray_id(ray_id)
     else:
         return str(uuid.uuid4())
+
+
+def uuid_from_ray_id(ray_id):
+    return str(uuid.UUID("0000000000000000" + ray_id))
 
 
 def enrich_origin_response_time(entry, origin_response_time_ns):
