@@ -6,6 +6,7 @@ import shutil
 import os
 import subprocess
 import sys
+import time
 
 from google.cloud import storage
 
@@ -13,9 +14,9 @@ from google.cloud import storage
 def main():
     args = get_args()
     clean()
-    artifact = build_artifact()
+    version = get_version()
+    artifact = build_artifact(version)
     if not args.build_only:
-        version = get_version()
         release_url = upload(args.bucket, artifact, version)
         print(release_url)
 
@@ -48,7 +49,7 @@ def get_version():
     )
 
 
-def build_artifact():
+def build_artifact(version):
     os.mkdir("artifacts")
     artifact_path = "artifacts/honeyflare.zip"
     with zipfile.ZipFile(artifact_path, "w") as fh:
@@ -57,6 +58,15 @@ def build_artifact():
         for dirname, dirnames, filenames in os.walk("honeyflare"):
             for filename in filenames:
                 path = os.path.join(dirname, filename)
+                if path == 'honeyflare/version.py':
+                    # Create a custom version spec with the git treeish appended
+                    # to the base version in version.py
+                    with open(path) as version_fh:
+                        base_version = version_fh.readlines()[0].split('=', 1)[1].strip().strip('"')
+                    info = zipfile.ZipInfo(path, time.localtime(time.time())[:6])
+                    info.external_attr = 0o10644 << 16
+                    fh.writestr(info, 'version = "%s-%s"' % (base_version, version))
+                    continue
                 fh.write(path)
     return artifact_path
 
