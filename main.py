@@ -87,8 +87,11 @@ def main(event, context):
             sampling_rate_by_status=sampling_rate_by_status,
         )
         meta_event.add_field("events", events_handled)
+        meta_event.add_field("success", True)
     except RetriableError as err:
         # Hard exit to make sure this is retried
+        meta_event.add_field("success", False)
+        meta_event.add_field("retriable", True)
         meta_event.add_field("error", err.__class__.__name__)
         meta_event.add_field("error_message", str(err))
         # To prevent the stacktrace from being logged on retries, abort instead of re-raising
@@ -96,6 +99,7 @@ def main(event, context):
     except Exception as err:  # pylint: disable=broad-except
         # Swallow these but make sure they are logged and reported so that we can fix them
         traceback.print_exc()
+        meta_event.add_field("success", False)
         meta_event.add_field("error", err.__class__.__name__)
         meta_event.add_field("error_message", str(err))
     finally:
