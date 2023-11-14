@@ -65,7 +65,7 @@ def build_artifact(version):
                         base_version = version_fh.readlines()[0].split('=', 1)[1].strip().strip('"')
                     info = zipfile.ZipInfo(path, time.localtime(time.time())[:6])
                     info.external_attr = 0o10644 << 16
-                    fh.writestr(info, 'version = "%s-%s"\n' % (base_version, version))
+                    fh.writestr(info, '__version__ = "%s-%s"\n' % (base_version, version))
                     continue
                 fh.write(path)
     return artifact_path
