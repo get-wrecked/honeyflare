@@ -5,6 +5,7 @@ import os
 import random
 import re
 import sys
+import time
 import threading
 
 import libhoney
@@ -120,7 +121,10 @@ def read_honeycomb_responses(resp_queue, dataset):
 
 
 def is_already_processed(lock_bucket, object_name):
-    return _processed_blob(lock_bucket, object_name).exists()
+    try:
+        return _processed_blob(lock_bucket, object_name).exists()
+    except HTTPError as e:
+        raise RetriableError() from e
 
 
 def mark_as_processed(lock_bucket, object_name):
@@ -131,6 +135,17 @@ def mark_as_processed(lock_bucket, object_name):
         # Another invocation has already processed this but it failed to be
         # caught in the lock. Ignore
         pass
+    except HTTPError as e:
+        # We would really prefer to not raise at this point since we don't
+        # want to retry since the data has already been processed, thus we pray
+        # for this error to be transient and try again after a brief pause,
+        # otherwise treat it as a transient error and retry it later, as we
+        # prefer duplicated data to missing data
+        time.sleep(10)
+        try:
+            blob.upload_from_string(b'')
+        except HTTPError as e:
+            raise RetriableError() from e
 
 
 def _processed_blob(bucket, object_name):
