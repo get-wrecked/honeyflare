@@ -3,6 +3,7 @@ import os
 import time
 import traceback
 
+from flask import abort
 from google.cloud import storage
 
 from honeyflare import (
@@ -90,7 +91,8 @@ def main(event, context):
         # Hard exit to make sure this is retried
         meta_event.add_field("error", err.__class__.__name__)
         meta_event.add_field("error_message", str(err))
-        raise
+        # To prevent the stacktrace from being logged on retries, abort instead of re-raising
+        abort(500)
     except Exception as err:  # pylint: disable=broad-except
         # Swallow these but make sure they are logged and reported so that we can fix them
         traceback.print_exc()
