@@ -130,22 +130,24 @@ def is_already_processed(lock_bucket, object_name):
 def mark_as_processed(lock_bucket, object_name):
     blob = _processed_blob(lock_bucket, object_name)
     try:
-        blob.upload_from_string(b"")
+        blob.upload_from_string(b"", if_generation_match=0)
     except PreconditionFailed:
         # Another invocation has already processed this but it failed to be
         # caught in the lock. Ignore
         pass
-    except HTTPError as e:
+    except Exception:
         # We would really prefer to not raise at this point since we don't
         # want to retry since the data has already been processed, thus we pray
         # for this error to be transient and try again after a brief pause,
-        # otherwise treat it as a transient error and retry it later, as we
-        # prefer duplicated data to missing data
+        # otherwise silently ignore the error as raising will duplicate data when
+        # retried, but it not being marked as processed is only going to lead to
+        # duplicate data if we are invoked more than once (like due to
+        # at-least-once delivery guarantees).
         time.sleep(10)
         try:
-            blob.upload_from_string(b'')
-        except HTTPError as e:
-            raise RetriableError() from e
+            blob.upload_from_string(b'', if_generation_match=0)
+        except Exception:
+            pass
 
 
 def _processed_blob(bucket, object_name):
