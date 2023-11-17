@@ -65,6 +65,7 @@ def get_auth_jwt(vault_role):
         headers={
             "Metadata-Flavor": "Google",
         },
+        timeout=30,
     )
     response.raise_for_status()
     return response.text

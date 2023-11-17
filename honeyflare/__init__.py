@@ -123,8 +123,8 @@ def read_honeycomb_responses(resp_queue, dataset):
 def is_already_processed(lock_bucket, object_name):
     try:
         return _processed_blob(lock_bucket, object_name).exists()
-    except HTTPError as e:
-        raise RetriableError() from e
+    except Exception as ex:
+        raise RetriableError() from ex
 
 
 def mark_as_processed(lock_bucket, object_name):
@@ -157,8 +157,8 @@ def download_file(bucket, object_name):
     local_path = "/tmp/" + os.path.basename(object_name)
     try:
         blob.download_to_filename(local_path, raw_download=True)
-    except HTTPError as e:
-        raise RetriableError() from e
+    except HTTPError as ex:
+        raise RetriableError() from ex
     return local_path
 
 

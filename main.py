@@ -3,7 +3,9 @@ import os
 import time
 import traceback
 
-from flask import abort
+# We don't use flask ourself, but it's used as the runtime by GCP and thus
+# usable by us
+from flask import abort  # pylint: disable=import-error
 from google.cloud import storage
 
 from honeyflare import (

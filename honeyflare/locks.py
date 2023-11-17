@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-from google.cloud import storage
 from google.api_core.exceptions import PreconditionFailed, NotFound
 
 from .exceptions import FileLockedError

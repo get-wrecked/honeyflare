@@ -26,6 +26,7 @@ load-plugins=
 #            lazy-load expensive operations
 disable=missing-docstring,
     bad-continuation,
+    no-member,
     global-statement,
     I,
     R
@@ -194,7 +195,7 @@ max-locals=7
 max-returns=3
 
 # Maximum number of branch for function / method body
-max-branchs=6
+max-branches=6
 
 # Maximum number of statements in function / method body
 max-statements=50
@@ -234,4 +235,4 @@ int-import-graph=
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "Exception"
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.Exception
