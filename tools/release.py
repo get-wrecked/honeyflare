@@ -79,7 +79,6 @@ def upload(bucket_name, artifact_path, version):
         blob.upload_from_file(
             fh,
             content_type="application/zip",
-            predefined_acl="public-read",
         )
     return blob.public_url
 
