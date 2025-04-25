@@ -78,6 +78,7 @@ def enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter
     url_shape = urlshape(client_request_uri, path_patterns, query_param_filter)
     entry["Path"] = url_shape.path
     entry["PathShape"] = url_shape.path_shape
+    entry["PathShapeStrict"] = url_shape.path_shape_strict
     entry["Query"] = url_shape.query
     entry["QueryShape"] = url_shape.query_shape
     entry["UriShape"] = url_shape.uri_shape

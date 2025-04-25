@@ -12,6 +12,7 @@ UrlShape = namedtuple(
         "path",
         "query",
         "path_shape",
+        "path_shape_strict",
         "query_shape",
         "path_params",
         "query_params",
@@ -63,10 +64,12 @@ def urlshape(uri, patterns, query_param_filter=None):
         if not match:
             continue
         path_shape = pattern.shape
+        path_shape_strict = pattern.shape
         path_params = match.groupdict()
         break
     else:
         path_shape = parsed_uri.path
+        path_shape_strict = None
 
     params = []
     for param, value in sorted(
@@ -88,6 +91,7 @@ def urlshape(uri, patterns, query_param_filter=None):
         parsed_uri.path,
         parsed_uri.query,
         path_shape,
+        path_shape_strict,
         query_shape,
         path_params,
         query_params,
