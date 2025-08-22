@@ -1,4 +1,11 @@
-#!./venv/bin/python
+#!/usr/bin/env -S uv run
+
+# /// script
+# dependencies = [
+#     "google-cloud-storage",
+# ]
+# ///
+
 
 import argparse
 import zipfile
