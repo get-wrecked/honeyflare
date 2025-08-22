@@ -47,8 +47,9 @@ def get_vault_secret(vault_url):
     )
     key = parsed_parameters["key"][0]
 
-    # Clean up to not affect other https queries
-    del os.environ["REQUESTS_CA_BUNDLE"]
+    if b64_ca_cert:
+        # Clean up to not affect other https queries
+        del os.environ["REQUESTS_CA_BUNDLE"]
 
     return honeycomb_key["data"]["data"][key]
 
