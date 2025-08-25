@@ -21,8 +21,9 @@ def get_vault_secret(vault_url):
     """
     adapter = HTTPAdapter(
         max_retries=Retry(
-            total=4,
-            backoff_factor=0.1,
+            total=7,
+            backoff_factor=1,
+            backoff_jitter=10,
             status_forcelist=[412, 429, 500, 502, 503],
             allowed_methods=(
                 "GET",
