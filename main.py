@@ -77,6 +77,10 @@ def main(event, context):
 
     start_time = time.time()
     try:
+        if event["name"].startswith("ownership-challenge"):
+            meta_event.add_field("success", True)
+            return
+
         bucket = storage_client.bucket(event["bucket"])
         events_handled = process_bucket_object(
             bucket,
