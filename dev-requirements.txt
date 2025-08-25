@@ -4,7 +4,7 @@ astroid==3.3.11
 cachetools==5.5.2
 certifi==2025.8.3
 charset-normalizer==3.4.3
-coverage==7.10.4
+coverage==7.10.5
 dill==0.4.0
 google-api-core==2.25.1
 google-auth==2.40.3
@@ -13,7 +13,6 @@ google-cloud-storage==3.3.0
 google-crc32c==1.7.1
 google-resumable-media==2.7.2
 googleapis-common-protos==1.70.0
-hvac==2.3.0
 idna==3.10
 iniconfig==2.1.0
 isort==6.0.1

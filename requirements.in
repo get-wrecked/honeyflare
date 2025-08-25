@@ -2,7 +2,6 @@
 # Install to a fresh virtualenv and freeze to generate updated requirements.txt
 
 google-cloud-storage
-hvac
 libhoney
 orjson
 requests
