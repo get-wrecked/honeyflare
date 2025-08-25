@@ -2,6 +2,7 @@ import json
 import os
 import time
 import traceback
+import uuid
 
 # We don't use flask ourself, but it's used as the runtime by GCP and thus
 # usable by us
@@ -105,7 +106,7 @@ def main(event, context):
         meta_event.add_field("error", err.__class__.__name__)
         meta_event.add_field("error_message", str(err))
     finally:
-        meta_event.add_field("processing_time_seconds", time.time() - start_time)
+        meta_event.add_field("duration_ms", (time.time() - start_time) * 1000)
         print(logfmt.format(meta_event.fields()))
         meta_event.send()
         meta_client.close()
@@ -122,3 +123,8 @@ def instrument_invocation(libhoney_event, event, context):
     for context_property in ("event_id", "timestamp", "event_type", "resource"):
         value = getattr(context, context_property, None)
         libhoney_event.add_field("context.%s" % context_property, value)
+
+    libhoney_event.add_field("trace.trace_id", str(uuid.uuid4()))
+    libhoney_event.add_field("trace.span_id", str(uuid.uuid4()))
+    libhoney_event.add_field("service.name", "honeyflare")
+    libhoney_event.add_field("name", "process-logfile")
