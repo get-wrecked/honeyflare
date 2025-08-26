@@ -6,6 +6,7 @@ import uuid
 
 # We don't use flask ourself, but it's used as the runtime by GCP and thus
 # usable by us
+import requests
 from flask import abort  # pylint: disable=import-error
 from google.cloud import storage
 
@@ -22,6 +23,12 @@ from honeyflare import (
 # pylint: disable=invalid-name
 
 storage_client = storage.Client()
+# Not pretty, but doing this to bump the connection pool size to avoid constant warnings
+# during concurrent executions from connections being discarded.
+adapter = requests.adapters.HTTPAdapter(pool_maxsize=128)
+storage_client._http.mount("https://", adapter)
+storage_client._http._auth_request.session.mount("https://", adapter)
+
 
 # Check for required envvars to fail early on invalid deployments
 honeycomb_dataset = os.environ.get("HONEYCOMB_DATASET")
