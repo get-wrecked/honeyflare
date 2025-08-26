@@ -36,6 +36,11 @@ honeycomb_key = os.environ.get("HONEYCOMB_KEY")
 if honeycomb_key is None:
     raise ValueError("Missing environment variable HONEYCOMB_KEY")
 
+if honeycomb_key.startswith("vault://"):
+    vault_start_time = time.time()
+    honeycomb_key = vault.get_vault_secret(honeycomb_key)
+    print("Vault key lookup finished in %.2fs" % (time.time() - vault_start_time))
+
 patterns = os.environ.get("PATTERNS")
 if patterns is not None:
     patterns = json.loads(patterns)
@@ -64,10 +69,6 @@ def main(event, context):
     :param event: Event payload (dict).
     :param context: Metadata for the event (google.cloud.functions.Context)
     """
-    global honeycomb_key, lock_bucket
-
-    if honeycomb_key.startswith("vault://"):
-        honeycomb_key = vault.get_vault_secret(honeycomb_key)
 
     meta_client = create_libhoney_client(
         honeycomb_key, honeycomb_meta_dataset, honeycomb_api
