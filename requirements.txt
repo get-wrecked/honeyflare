@@ -12,7 +12,7 @@ google-resumable-media==2.8.0
 googleapis-common-protos==1.72.0
 idna==3.11
 libhoney==2.4.0
-orjson==3.11.7
+orjson==3.11.8
 proto-plus==1.27.1
 protobuf==6.33.5
 pyasn1==0.6.3
