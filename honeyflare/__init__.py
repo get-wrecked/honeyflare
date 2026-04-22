@@ -2,6 +2,7 @@ import gzip
 import os
 import time
 
+import orjson
 from google.api_core.exceptions import PreconditionFailed
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -92,12 +93,12 @@ def process_bucket_object(
                     span.set_attribute(
                         "MetaProcessor", "honeyflare/%s" % __version__
                     )
-                    # Filter None upfront to avoid OTel warning on each
-                    # dropped attribute. Non-primitive values (shouldn't
-                    # happen for cloudflare logs) will be dropped with a
-                    # warning by OTel, which is the right signal.
                     span.set_attributes(
-                        {k: v for k, v in entry.items() if v is not None}
+                        {
+                            k: _coerce_attribute_value(v)
+                            for k, v in entry.items()
+                            if v is not None
+                        }
                     )
                 finally:
                     span.end(end_time=start_time_ns)
@@ -232,6 +233,27 @@ class _RayIdGenerator(IdGenerator):
             self._next_span_id = None
             return sid
         return self._fallback.generate_span_id()
+
+
+def _coerce_attribute_value(value):
+    """
+    Coerce a cloudflare log entry value into a type OTel will accept on a
+    span attribute. Mirrors libhoney's "JSON-everything" behavior: dicts
+    (ResponseHeaders, Cookies, RequestHeaders, JA4Signals, etc.) and
+    mixed-type sequences become JSON strings so they land in Honeycomb
+    as queryable-by-substring fields rather than being dropped with a
+    per-attribute warning on every span.
+
+    None values should be filtered by the caller.
+    """
+    if isinstance(value, (str, bool, int, float)):
+        return value
+    if isinstance(value, (list, tuple)):
+        # OTel accepts sequences of primitives directly. Drop Nones and
+        # let them through; fall back to JSON for mixed-type sequences.
+        if all(el is None or isinstance(el, (str, bool, int, float)) for el in value):
+            return [el for el in value if el is not None]
+    return orjson.dumps(value).decode("utf-8")
 
 
 def is_already_processed(lock_bucket, object_name):
