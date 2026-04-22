@@ -65,7 +65,7 @@ def build_artifact(version):
         for dirname, dirnames, filenames in os.walk("honeyflare"):
             for filename in filenames:
                 path = os.path.join(dirname, filename)
-                if path == 'honeyflare/version.py':
+                if filename == 'version.py' and dirname == 'honeyflare':
                     # Create a custom version spec with the git treeish appended
                     # to the base version in version.py
                     with open(path) as version_fh:
