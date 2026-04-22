@@ -18,7 +18,7 @@ protobuf==6.33.5
 pyasn1==0.6.3
 pyasn1-modules==0.4.2
 pycparser==3.0
-requests==2.33.0
+requests==2.33.1
 rsa==4.9.1
 statsd==4.0.1
 urllib3==2.6.3

@@ -32,7 +32,7 @@ pylint==4.0.4
 pytest==9.0.3
 pytest-cov==7.0.0
 pyyaml==6.0.3
-requests==2.33.0
+requests==2.33.1
 rsa==4.9.1
 statsd==4.0.1
 tomlkit==0.14.0
