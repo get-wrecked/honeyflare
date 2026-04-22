@@ -1,5 +1,4 @@
 import ipaddress
-import uuid
 
 from .urlshape import urlshape
 
@@ -9,6 +8,10 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     :param entry: A dictionary with the log entry fields.
     :param path_patterns: A list of `.urlshape.Pattern` for known path patterns
         to parse.
+
+    Note: trace/span/service identity is no longer set here — the caller
+    builds OTel SpanContext from RayID/ParentRayID and sets service.name as
+    a resource attribute on the tracer.
     """
     # Which fields are included will vary depending on the logging config, thus don't
     # assume anything
@@ -29,39 +32,11 @@ def enrich_entry(entry, path_patterns, query_param_filter):
     if client_request_uri is not None:
         enrich_urlshape(entry, client_request_uri, path_patterns, query_param_filter)
 
-    ray_id = entry.get("RayID")
-    parent_ray_id = entry.get("ParentRayID")
-
-    # Required fields for otel compatibility
-    entry["trace.trace_id"] = get_trace_id(ray_id, parent_ray_id)
-    entry["trace.span_id"] = uuid_from_ray_id(ray_id) if ray_id else str(uuid.uuid4())
-    if parent_ray_id and parent_ray_id != "00":
-        entry["trace.parent_id"] = uuid_from_ray_id(parent_ray_id)
-    entry["service.name"] = "cloudflare"
-    entry["name"] = "HTTP %s" % entry.get("ClientRequestMethod", "N/A")
-
 
 def enrich_duration(entry, start_ns, end_ns):
     duration_ms = (end_ns - start_ns) / 1e6
     entry["DurationSeconds"] = duration_ms / 1000
     entry["DurationMs"] = duration_ms
-
-
-def get_trace_id(ray_id, parent_ray_id):
-    # Cloudflare says the RayId should be unique, thus it should be unique also when
-    # padded to form a full uuid. Use this to set a trace id so that all requests
-    # originating from a worker end up in the same trace (worker requests have a parent
-    # ray id)
-    if parent_ray_id is not None and parent_ray_id != "00":
-        return uuid_from_ray_id(parent_ray_id)
-    elif ray_id is not None:
-        return uuid_from_ray_id(ray_id)
-    else:
-        return str(uuid.uuid4())
-
-
-def uuid_from_ray_id(ray_id):
-    return str(uuid.UUID("0000000000000000" + ray_id))
 
 
 def enrich_origin_response_time(entry, origin_response_time_ns):

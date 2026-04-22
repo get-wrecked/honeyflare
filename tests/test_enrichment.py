@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from honeyflare import compile_pattern
@@ -40,25 +38,6 @@ def test_enrich_entry():
     assert entry["Query_emptyParam"] == ""
     assert entry["Query_regularParam"] == "paramValue"
     assert entry["UriShape"] == "/users/:userId?emptyParam=?&regularParam=?"
-    assert entry["trace.trace_id"] == str(uuid.UUID("00000000000000006f2de346beec9644"))
-    assert entry["trace.span_id"] == str(uuid.UUID("00000000000000006f2de346beec9644"))
-    assert "trace.parent_id" not in entry
-    assert entry["name"] == "HTTP POST"
-
-
-def test_enrich_entry_with_parent():
-    entry = {
-        "RayID": "bbbbbbbbbbbbbbbb",
-        "ParentRayID": "aaaaaaaaaaaaaaaa",
-    }
-
-    enrich_entry(entry, [], None)
-
-    assert entry["trace.trace_id"] == str(uuid.UUID("0000000000000000aaaaaaaaaaaaaaaa"))
-    assert entry["trace.span_id"] == str(uuid.UUID("0000000000000000bbbbbbbbbbbbbbbb"))
-    assert entry["trace.parent_id"] == str(
-        uuid.UUID("0000000000000000aaaaaaaaaaaaaaaa")
-    )
 
 
 def test_enrich_path_shape_explicit_trailing_slash():
