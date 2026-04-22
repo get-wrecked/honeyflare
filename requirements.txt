@@ -15,7 +15,7 @@ libhoney==2.4.0
 orjson==3.11.7
 proto-plus==1.27.1
 protobuf==6.33.5
-pyasn1==0.6.2
+pyasn1==0.6.3
 pyasn1-modules==0.4.2
 pycparser==3.0
 requests==2.33.0
