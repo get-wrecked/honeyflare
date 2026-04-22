@@ -22,8 +22,6 @@ from .version import __version__
 def process_bucket_object(
     bucket,
     object_name,
-    honeycomb_dataset,
-    honeycomb_key,
     honeycomb_api="https://api.honeycomb.io",
     patterns=None,
     query_param_filter=None,
@@ -34,8 +32,9 @@ def process_bucket_object(
     :param bucket: A `google.cloud.storage.bucket.Bucket` logs should be
         downloaded from.
     :param object_name: The name of the object in the bucket to download.
-    :param honeycomb_dataset: The name of the honeycomb dataset to write to.
-    :param honeycomb_key: The honeycomb API key.
+    :param honeycomb_api: The base URL OTLP traces are sent to. Typically a
+        Refinery configured with `SendKeyMode: missingonly` so the ingest
+        key is injected on egress; Honeycomb E&S routes by `service.name`.
     :param patterns: A list of path patterns to match against.
     :param query_param_filter: A set of query parameters to allow. If None, all
         will be allowed. If empty, none.
@@ -56,8 +55,6 @@ def process_bucket_object(
     tracer, provider = create_otel_tracer(
         service_name="cloudflare",
         honeycomb_api=honeycomb_api,
-        honeycomb_key=honeycomb_key,
-        honeycomb_dataset=honeycomb_dataset,
     )
 
     lock = GCSLock(lock_bucket, "locks/%s" % object_name)
@@ -107,17 +104,19 @@ def process_bucket_object(
     return total_events
 
 
-def create_otel_tracer(service_name, honeycomb_api, honeycomb_key, honeycomb_dataset):
+def create_otel_tracer(service_name, honeycomb_api):
     """
     Build an OTel tracer + provider pointed at a Honeycomb (or proxy)
-    endpoint over OTLP HTTP. service.name is set as a resource attribute.
-    honeycomb_key and honeycomb_dataset are sent as the `x-honeycomb-team`
-    and `x-honeycomb-dataset` headers on each OTLP request — the same
-    routing contract libhoney used.
+    endpoint over OTLP HTTP. service.name is set as a resource attribute
+    and is what Honeycomb E&S routes events to within the environment.
+
+    No ingest key is sent from honeyflare — deployments are expected to
+    route through a Refinery configured with `SendKeyMode: missingonly`,
+    which injects the key on egress to Honeycomb.
 
     service.version is pinned to honeyflare's own package version, which
     tools/release.py rewrites at build time to embed the git treeish (e.g.
-    "0.2.0-a1b2c3d4...") so every deployed build is distinguishable in
+    "0.3.0-a1b2c3d4...") so every deployed build is distinguishable in
     Honeycomb.
 
     Returns (tracer, provider). Callers should call provider.shutdown() at
@@ -132,10 +131,6 @@ def create_otel_tracer(service_name, honeycomb_api, honeycomb_key, honeycomb_dat
     provider = TracerProvider(resource=resource)
     exporter = OTLPSpanExporter(
         endpoint="%s/v1/traces" % honeycomb_api.rstrip("/"),
-        headers={
-            "x-honeycomb-team": honeycomb_key,
-            "x-honeycomb-dataset": honeycomb_dataset,
-        },
     )
     provider.add_span_processor(BatchSpanProcessor(exporter))
     return provider.get_tracer("honeyflare"), provider

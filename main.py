@@ -12,7 +12,6 @@ from honeyflare import (
     process_bucket_object,
     RetriableError,
     logfmt,
-    vault,
 )
 
 # Ignoring invalid names here due to all the globals we cache (which aren't necessarily
@@ -26,24 +25,6 @@ adapter = requests.adapters.HTTPAdapter(pool_maxsize=128)
 storage_client._http.mount("https://", adapter)
 storage_client._http._auth_request.session.mount("https://", adapter)
 
-
-# Check for required envvars to fail early on invalid deployments
-honeycomb_dataset = os.environ.get("HONEYCOMB_DATASET")
-if honeycomb_dataset is None:
-    raise ValueError("Missing environment variable HONEYCOMB_DATASET")
-
-honeycomb_meta_dataset = os.environ.get("HONEYCOMB_META_DATASET")
-if honeycomb_meta_dataset is None:
-    raise ValueError("Missing environment variable HONEYCOMB_META_DATASET")
-
-honeycomb_key = os.environ.get("HONEYCOMB_KEY")
-if honeycomb_key is None:
-    raise ValueError("Missing environment variable HONEYCOMB_KEY")
-
-if honeycomb_key.startswith("vault://"):
-    vault_start_time = time.time()
-    honeycomb_key = vault.get_vault_secret(honeycomb_key)
-    print("Vault key lookup finished in %.2fs" % (time.time() - vault_start_time))
 
 patterns = os.environ.get("PATTERNS")
 if patterns is not None:
@@ -77,8 +58,6 @@ def main(event, context):
     meta_tracer, meta_provider = create_otel_tracer(
         service_name="honeyflare",
         honeycomb_api=honeycomb_api,
-        honeycomb_key=honeycomb_key,
-        honeycomb_dataset=honeycomb_meta_dataset,
     )
 
     try:
@@ -95,9 +74,7 @@ def main(event, context):
                 events_handled = process_bucket_object(
                     bucket,
                     event["name"],
-                    honeycomb_dataset,
-                    honeycomb_key,
-                    honeycomb_api,
+                    honeycomb_api=honeycomb_api,
                     patterns=patterns,
                     query_param_filter=query_param_filter,
                     lock_bucket=lock_bucket,

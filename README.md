@@ -1,9 +1,26 @@
 # honeyflare
 
-Forward Cloudflare logs to Honeycomb
+Forward Cloudflare logs to Honeycomb as OpenTelemetry traces.
 
-Honeyflare assumes that your Cloudflare logs uses the UnixNanos format for
+Each cloudflare log line becomes a span with `service.name=cloudflare`;
+each invocation of the function itself emits a meta span with
+`service.name=honeyflare`. When a log line has a `ParentRayID`, the span
+inherits its parent's trace_id so worker-initiated subrequests end up in
+the same trace as their originator.
+
+Honeyflare assumes that your Cloudflare logs use the UnixNanos format for
 timestamps, make sure you have that set before deploying Honeyflare.
+
+
+## Routing
+
+Honeyflare sends OTLP/HTTP traces to whatever `HONEYCOMB_API` points at
+and does not send an ingest key itself. Expected deployment is behind a
+[Refinery](https://github.com/honeycombio/refinery) configured with
+`AccessKeys.SendKeyMode: missingonly`, which injects the Honeycomb ingest
+key on egress. Honeycomb E&S (Environments & Services) routes events by
+`service.name`, so no per-dataset config is needed on the honeyflare
+side.
 
 
 ## Development
@@ -24,9 +41,9 @@ you want to use. Then:
 
 ## Deployment
 
-The file to parsed is currently downloaded in it's entirety to `/tmp`, which is
-mounted as a tmpfs. Thus the function needs to have enough memory to handle the
-biggest file you receive from Cloudflare.
+The file to be parsed is downloaded in its entirety to `/tmp`, which is
+mounted as a tmpfs. Thus the function needs to have enough memory to
+handle the biggest file you receive from Cloudflare.
 
 ```sh
 $ gcloud functions deploy honeyflare \
