@@ -51,8 +51,6 @@ def test_process_file(bucket, test_files, blob_name):
         events_handled = process_bucket_object(
             bucket,
             blob_name,
-            "test-dataset",
-            "test-key",
             patterns=patterns,
             query_param_filter=set(),
         )
@@ -60,10 +58,6 @@ def test_process_file(bucket, test_files, blob_name):
     assert events_handled == 2
     mock_exporter_cls.assert_called_with(
         endpoint="https://api.honeycomb.io/v1/traces",
-        headers={
-            "x-honeycomb-team": "test-key",
-            "x-honeycomb-dataset": "test-dataset",
-        },
     )
 
     # Pull out the exported spans (BatchSpanProcessor calls export with a list)
@@ -98,8 +92,8 @@ def test_process_repeated_file(bucket, test_files, blob_name):
     with mock.patch("honeyflare.OTLPSpanExporter") as mock_exporter_cls:
         mock_exporter = mock_exporter_cls.return_value
         mock_exporter.export.return_value = 0
-        process_bucket_object(bucket, blob_name, "test-dataset", "test-key")
-        process_bucket_object(bucket, blob_name, "test-dataset", "test-key")
+        process_bucket_object(bucket, blob_name)
+        process_bucket_object(bucket, blob_name)
 
     exported_spans = []
     for call in mock_exporter.export.call_args_list:

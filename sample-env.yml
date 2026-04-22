@@ -1,3 +1,1 @@
-HONEYCOMB_DATASET: 'cloudflare-test'
-HONEYCOMB_META_DATASET: 'honeyflare-test'
-HONEYCOMB_KEY: 'somekey'
+HONEYCOMB_API: 'http://refinery.example.internal'
