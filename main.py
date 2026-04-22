@@ -2,16 +2,13 @@ import json
 import os
 import time
 import traceback
-import uuid
 
-# We don't use flask ourself, but it's used as the runtime by GCP and thus
-# usable by us
 import requests
 from flask import abort  # pylint: disable=import-error
 from google.cloud import storage
 
 from honeyflare import (
-    create_libhoney_client,
+    create_otel_tracer,
     process_bucket_object,
     RetriableError,
     logfmt,
@@ -77,66 +74,73 @@ def main(event, context):
     :param context: Metadata for the event (google.cloud.functions.Context)
     """
 
-    meta_client = create_libhoney_client(
-        honeycomb_key, honeycomb_meta_dataset, honeycomb_api
+    meta_tracer, meta_provider = create_otel_tracer(
+        service_name="honeyflare",
+        honeycomb_api=honeycomb_api,
+        honeycomb_key=honeycomb_key,
+        honeycomb_dataset=honeycomb_meta_dataset,
     )
-    meta_event = meta_client.new_event()
-    instrument_invocation(meta_event, event, context)
 
-    start_time = time.time()
     try:
-        if event["name"].startswith("ownership-challenge"):
-            meta_event.add_field("success", True)
-            return
+        with meta_tracer.start_as_current_span("process-logfile") as meta_span:
+            instrument_invocation(meta_span, event, context)
 
-        bucket = storage_client.bucket(event["bucket"])
-        events_handled = process_bucket_object(
-            bucket,
-            event["name"],
-            honeycomb_dataset,
-            honeycomb_key,
-            honeycomb_api,
-            patterns=patterns,
-            query_param_filter=query_param_filter,
-            lock_bucket=lock_bucket,
-            sampling_rate_by_status=sampling_rate_by_status,
-        )
-        meta_event.add_field("events", events_handled)
-        meta_event.add_field("success", True)
-    except RetriableError as err:
-        # Hard exit to make sure this is retried
-        meta_event.add_field("success", False)
-        meta_event.add_field("retriable", True)
-        meta_event.add_field("error", err.__class__.__name__)
-        meta_event.add_field("error_message", str(err))
-        # To prevent the stacktrace from being logged on retries, abort instead of re-raising
-        abort(500)
-    except Exception as err:  # pylint: disable=broad-except
-        # Swallow these but make sure they are logged and reported so that we can fix them
-        traceback.print_exc()
-        meta_event.add_field("success", False)
-        meta_event.add_field("error", err.__class__.__name__)
-        meta_event.add_field("error_message", str(err))
+            start_time = time.time()
+            try:
+                if event["name"].startswith("ownership-challenge"):
+                    meta_span.set_attribute("success", True)
+                    return
+
+                bucket = storage_client.bucket(event["bucket"])
+                events_handled = process_bucket_object(
+                    bucket,
+                    event["name"],
+                    honeycomb_dataset,
+                    honeycomb_key,
+                    honeycomb_api,
+                    patterns=patterns,
+                    query_param_filter=query_param_filter,
+                    lock_bucket=lock_bucket,
+                    sampling_rate_by_status=sampling_rate_by_status,
+                )
+                meta_span.set_attribute("events", events_handled)
+                meta_span.set_attribute("success", True)
+            except RetriableError as err:
+                # Hard exit to make sure this is retried
+                meta_span.set_attribute("success", False)
+                meta_span.set_attribute("retriable", True)
+                meta_span.set_attribute("error", err.__class__.__name__)
+                meta_span.set_attribute("error_message", str(err))
+                # To prevent the stacktrace from being logged on retries, abort instead of re-raising
+                abort(500)
+            except Exception as err:  # pylint: disable=broad-except
+                # Swallow these but make sure they are logged and reported so that we can fix them
+                traceback.print_exc()
+                meta_span.set_attribute("success", False)
+                meta_span.set_attribute("error", err.__class__.__name__)
+                meta_span.set_attribute("error_message", str(err))
+            finally:
+                meta_span.set_attribute(
+                    "duration_ms", (time.time() - start_time) * 1000
+                )
+                print(logfmt.format(dict(meta_span.attributes)))
     finally:
-        meta_event.add_field("duration_ms", (time.time() - start_time) * 1000)
-        print(logfmt.format(meta_event.fields()))
-        meta_event.send()
-        meta_client.close()
+        meta_provider.shutdown()
 
 
-def instrument_invocation(libhoney_event, event, context):
+def instrument_invocation(span, event, context):
     for event_key in ("name", "bucket", "contentType", "timeCreated", "size"):
-        libhoney_event.add_field("event.%s" % event_key, event[event_key])
+        span.set_attribute("event.%s" % event_key, event[event_key])
 
     owner = event.get("owner")
     if owner:
-        libhoney_event.add_field("event.owner", owner.get("entityId"))
+        span.set_attribute("event.owner", owner.get("entityId"))
 
     for context_property in ("event_id", "timestamp", "event_type", "resource"):
         value = getattr(context, context_property, None)
-        libhoney_event.add_field("context.%s" % context_property, value)
-
-    libhoney_event.add_field("trace.trace_id", str(uuid.uuid4()))
-    libhoney_event.add_field("trace.span_id", str(uuid.uuid4()))
-    libhoney_event.add_field("service.name", "honeyflare")
-    libhoney_event.add_field("name", "process-logfile")
+        if value is None:
+            continue
+        if isinstance(value, (str, bool, int, float)):
+            span.set_attribute("context.%s" % context_property, value)
+        else:
+            span.set_attribute("context.%s" % context_property, str(value))
