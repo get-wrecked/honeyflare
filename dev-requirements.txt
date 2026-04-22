@@ -18,7 +18,7 @@ iniconfig==2.3.0
 isort==7.0.0
 libhoney==2.4.0
 mccabe==0.7.0
-orjson==3.11.7
+orjson==3.11.8
 packaging==26.0
 platformdirs==4.9.2
 pluggy==1.6.0
