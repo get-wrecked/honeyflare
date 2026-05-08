@@ -11,14 +11,14 @@ google-crc32c==1.8.0
 google-resumable-media==2.8.0
 googleapis-common-protos==1.72.0
 idna==3.11
-importlib_metadata==8.7.1
+importlib-metadata==8.7.1
 opentelemetry-api==1.41.0
 opentelemetry-exporter-otlp-proto-common==1.41.0
 opentelemetry-exporter-otlp-proto-http==1.41.0
 opentelemetry-proto==1.41.0
 opentelemetry-sdk==1.41.0
 opentelemetry-semantic-conventions==0.62b0
-orjson==3.11.8
+orjson==3.11.9
 proto-plus==1.27.1
 protobuf==6.33.5
 pyasn1==0.6.3
@@ -26,6 +26,6 @@ pyasn1-modules==0.4.2
 pycparser==3.0
 requests==2.33.1
 rsa==4.9.1
-typing_extensions==4.15.0
+typing-extensions==4.15.0
 urllib3==2.6.3
 zipp==3.23.1
