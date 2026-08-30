@@ -1,5 +1,5 @@
 # This file only contains the high-level dependencies without a pinned version.
-# Install to a fresh virtualenv and freeze to generate updated requirements.txt
+# Regenerate requirements.txt by running ./tools/refreeze-requirements.sh
 
 google-cloud-storage
 opentelemetry-api

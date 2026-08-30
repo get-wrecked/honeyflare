@@ -13,7 +13,7 @@ fi
 
 eval $TEST_COMMAND
 
-./venv/bin/watchmedo shell-command \
+./.venv/bin/watchmedo shell-command \
     --patterns="*.py" \
     --recursive \
     --wait \

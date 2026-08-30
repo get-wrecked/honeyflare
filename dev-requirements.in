@@ -1,6 +1,6 @@
 # This file only contains the high-level development dependencies without a
-# pinned version. Install to a fresh virtualenv and freeze to
-# dev-requirements.txt
+# pinned version. Regenerate dev-requirements.txt by running
+# ./tools/refreeze-requirements.sh
 
 -r requirements.txt
 

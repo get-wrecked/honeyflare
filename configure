@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+PYTHON_VERSION=3.14
+
 main () {
     set -e
     sanity_check
@@ -8,20 +10,19 @@ main () {
 }
 
 sanity_check () {
-    which python3 >/dev/null \
+    which uv >/dev/null \
         || (
-            echo "You have to install python3 first"
+            echo "You have to install uv first: https://docs.astral.sh/uv/"
             exit 1
             )
 }
 
 create_virtualenv () {
-    python3 -m venv venv
-    ./venv/bin/pip install -U pip setuptools wheel
+    uv venv --python "$PYTHON_VERSION"
 }
 
 install_requirements () {
-    ./venv/bin/pip install --no-dependencies -r dev-requirements.txt
+    uv pip sync dev-requirements.txt
 }
 
 if [[ $BASH_SOURCE = $0 ]]; then
