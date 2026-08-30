@@ -14,7 +14,7 @@ charset-normalizer==3.4.9
     # via
     #   -r requirements.txt
     #   requests
-coverage==7.15.2
+coverage[toml]==7.15.2
     # via pytest-cov
 cryptography==49.0.0
     # via
@@ -88,7 +88,7 @@ opentelemetry-semantic-conventions==0.65b0
     # via
     #   -r requirements.txt
     #   opentelemetry-sdk
-orjson==3.11.9
+orjson==3.12.0
     # via -r requirements.txt
 packaging==26.2
     # via pytest
@@ -152,5 +152,5 @@ urllib3==2.7.0
     # via
     #   -r requirements.txt
     #   requests
-watchdog==6.0.0
+watchdog[watchmedo]==6.0.0
     # via -r dev-requirements.in
