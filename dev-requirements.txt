@@ -16,7 +16,7 @@ charset-normalizer==3.4.9
     #   requests
 coverage==7.15.2
     # via pytest-cov
-cryptography==49.0.0
+cryptography==50.0.1
     # via
     #   -r requirements.txt
     #   google-auth
@@ -59,7 +59,7 @@ idna==3.18
     #   requests
 iniconfig==2.3.0
     # via pytest
-isort==8.0.1
+isort==9.0.1
     # via pylint
 mccabe==0.7.0
     # via pylint
