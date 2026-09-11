@@ -2,36 +2,36 @@
 #    uv pip compile requirements.in --python-version=3.14 --output-file=requirements.txt
 certifi==2026.7.22
     # via requests
-cffi==2.1.0
+cffi==2.1.1
     # via cryptography
-charset-normalizer==3.4.9
+charset-normalizer==3.5.1
     # via requests
 cryptography==49.0.0
     # via google-auth
-google-api-core==2.33.0
+google-api-core==2.36.0
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==2.56.2
+google-auth==2.57.1
     # via
     #   google-api-core
     #   google-cloud-core
     #   google-cloud-storage
-google-cloud-core==2.6.0
+google-cloud-core==2.7.0
     # via google-cloud-storage
-google-cloud-storage==3.13.0
+google-cloud-storage==3.13.1
     # via -r requirements.in
 google-crc32c==1.8.0
     # via
     #   google-cloud-storage
     #   google-resumable-media
-google-resumable-media==2.10.0
+google-resumable-media==2.10.2
     # via google-cloud-storage
-googleapis-common-protos==1.75.0
+googleapis-common-protos==1.75.3
     # via
     #   google-api-core
     #   opentelemetry-exporter-otlp-proto-http
-idna==3.18
+idna==3.19
     # via requests
 opentelemetry-api==1.44.0
     # via
@@ -53,11 +53,11 @@ opentelemetry-sdk==1.44.0
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.65b0
     # via opentelemetry-sdk
-orjson==3.11.9
+orjson==3.12.0
     # via -r requirements.in
-proto-plus==1.28.2
+proto-plus==1.28.4
     # via google-api-core
-protobuf==7.35.1
+protobuf==7.36.1
     # via
     #   google-api-core
     #   googleapis-common-protos
