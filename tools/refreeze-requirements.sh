@@ -14,13 +14,13 @@
 
 set -e
 
-# Matches the Cloud Function runtime (python314) honeyflare is deployed on.
-PYTHON_VERSION=3.14
+# Matches the Cloud Function runtime (python315) honeyflare is deployed on.
+PYTHON_VERSION=3.15
 
-uv pip compile requirements.in \
+uv pip compile requirements.in --upgrade \
     --python-version=$PYTHON_VERSION \
     --output-file=requirements.txt
 
-uv pip compile dev-requirements.in \
+uv pip compile dev-requirements.in --upgrade \
     --python-version=$PYTHON_VERSION \
     --output-file=dev-requirements.txt

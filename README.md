@@ -56,7 +56,7 @@ $ gcloud functions deploy honeyflare \
     --ingress-settings internal-only \
     --trigger-resource <bucket> \
     --trigger-event google.storage.object.finalize \
-    --runtime python314
+    --runtime python315
 ```
 
 
