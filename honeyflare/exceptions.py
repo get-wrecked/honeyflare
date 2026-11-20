@@ -7,3 +7,7 @@ class RetriableError(Exception):
 
 class FileLockedError(RetriableError):
     """The given file was already locked"""
+
+
+class ExportFailedError(RetriableError):
+    """A batch of spans could not be sent to the collector"""
