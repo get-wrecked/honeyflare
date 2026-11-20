@@ -13,6 +13,7 @@ from honeyflare import (
     RetriableError,
     logfmt,
 )
+from honeyflare.exceptions import FileLockedError
 
 # Ignoring invalid names here due to all the globals we cache (which aren't necessarily
 # constants)
@@ -89,7 +90,12 @@ def main(event, context):
                 meta_span.set_attribute("error", err.__class__.__name__)
                 meta_span.set_attribute("error_message", str(err))
                 # To prevent the stacktrace from being logged on retries, abort instead of re-raising
-                abort(500)
+                if isinstance(err, FileLockedError):
+                    # Another invocation is processing this file, so nothing failed
+                    # here. Pub/Sub redelivers on any status that isn't a success.
+                    abort(409)
+                else:
+                    abort(500)
             except Exception as err:  # pylint: disable=broad-except
                 # Swallow these but make sure they are logged and reported so that we can fix them
                 traceback.print_exc()
