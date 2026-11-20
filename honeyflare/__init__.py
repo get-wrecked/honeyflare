@@ -1,4 +1,5 @@
 import gzip
+import itertools
 import os
 import time
 
@@ -8,21 +9,25 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExportResult
 from opentelemetry.sdk.trace.id_generator import IdGenerator, RandomIdGenerator
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
 from urllib3.exceptions import HTTPError
 
 from . import enrichment
-from .exceptions import RetriableError
+from .exceptions import ExportFailedError, RetriableError
 from .locks import GCSLock
 from .sampler import Sampler
 from .urlshape import compile_pattern
 from .version import __version__
 
 
-# The batch span processor drops spans once this many are waiting to be exported
-MAX_QUEUE_SIZE = 2048
+# The number of log lines sent to the collector in one request
+EXPORT_BATCH_SIZE = 512
+
+# The exporter spends its whole timeout on a request that hangs, so it never tries
+# that request again itself
+EXPORT_ATTEMPTS = 3
 
 
 def process_bucket_object(
@@ -59,11 +64,9 @@ def process_bucket_object(
 
     compiled_patterns = [compile_pattern(p) for p in patterns or []]
     id_generator = _RayIdGenerator()
-    tracer, provider = create_otel_tracer(
-        service_name="cloudflare",
-        honeycomb_api=honeycomb_api,
-        id_generator=id_generator,
-    )
+    exporter = _create_exporter(honeycomb_api)
+    provider = _create_provider("cloudflare", id_generator)
+    tracer = provider.get_tracer("honeyflare")
 
     lock = GCSLock(lock_bucket, "locks/%s" % object_name)
     total_events = 0
@@ -78,45 +81,55 @@ def process_bucket_object(
 
             sampler = Sampler()
             source = get_raw_file_entries(local_path)
-            for sample_rate, entry in sampler.sample_lines(source, sampling_rate_by_status):
-                enrichment.enrich_entry(entry, compiled_patterns, query_param_filter)
-
-                start_time_ns = int(entry["EdgeEndTimestamp"])
-                context, trace_id, span_id = _build_trace_context(
-                    entry.get("RayID"), entry.get("ParentRayID")
-                )
-                id_generator.set_next(trace_id=trace_id, span_id=span_id)
-
-                span = tracer.start_span(
-                    "HTTP %s" % entry.get("ClientRequestMethod", "N/A"),
-                    context=context,
-                    start_time=start_time_ns,
-                )
-                try:
-                    span.set_attribute("SampleRate", sample_rate)
-                    span.set_attribute(
-                        "MetaProcessor", "honeyflare/%s" % __version__
-                    )
-                    span.set_attributes(
-                        {
-                            k: _coerce_attribute_value(v)
-                            for k, v in entry.items()
-                            if v is not None
-                        }
-                    )
-                finally:
-                    span.end(end_time=start_time_ns)
-                total_events += 1
-                if total_events % (MAX_QUEUE_SIZE // 2) == 0:
-                    # Wait for the exporter to catch up. The batch processor never
-                    # waits, it drops spans once its queue is full.
-                    provider.force_flush()
+            lines = sampler.sample_lines(source, sampling_rate_by_status)
+            for batch in itertools.batched(lines, EXPORT_BATCH_SIZE):
+                spans = []
+                for sample_rate, entry in batch:
+                    enrichment.enrich_entry(entry, compiled_patterns, query_param_filter)
+                    spans.append(_create_span(tracer, id_generator, sample_rate, entry))
+                _export(exporter, spans)
+                total_events += len(spans)
 
             os.remove(local_path)
             mark_as_processed(lock_bucket, object_name)
     finally:
         provider.shutdown()
+        exporter.shutdown()
     return total_events
+
+
+def _create_span(tracer, id_generator, sample_rate, entry):
+    start_time_ns = int(entry["EdgeEndTimestamp"])
+    context, trace_id, span_id = _build_trace_context(
+        entry.get("RayID"), entry.get("ParentRayID")
+    )
+    id_generator.set_next(trace_id=trace_id, span_id=span_id)
+
+    span = tracer.start_span(
+        "HTTP %s" % entry.get("ClientRequestMethod", "N/A"),
+        context=context,
+        start_time=start_time_ns,
+    )
+    try:
+        span.set_attribute("SampleRate", sample_rate)
+        span.set_attribute("MetaProcessor", "honeyflare/%s" % __version__)
+        span.set_attributes(
+            {
+                k: _coerce_attribute_value(v)
+                for k, v in entry.items()
+                if v is not None
+            }
+        )
+    finally:
+        span.end(end_time=start_time_ns)
+    return span
+
+
+def _export(exporter, spans):
+    for _ in range(EXPORT_ATTEMPTS):
+        if exporter.export(spans) is SpanExportResult.SUCCESS:
+            return
+    raise ExportFailedError("%d spans could not be exported" % len(spans))
 
 
 def create_otel_tracer(service_name, honeycomb_api, id_generator=None):
@@ -141,20 +154,25 @@ def create_otel_tracer(service_name, honeycomb_api, id_generator=None):
     Returns (tracer, provider). Callers should call provider.shutdown() at
     the end of the scope to flush buffered spans.
     """
+    provider = _create_provider(service_name, id_generator)
+    provider.add_span_processor(BatchSpanProcessor(_create_exporter(honeycomb_api)))
+    return provider.get_tracer("honeyflare"), provider
+
+
+def _create_provider(service_name, id_generator):
     resource = Resource.create(
         {
             "service.name": service_name,
             "service.version": __version__,
         }
     )
-    provider = TracerProvider(resource=resource, id_generator=id_generator)
-    exporter = OTLPSpanExporter(
+    return TracerProvider(resource=resource, id_generator=id_generator)
+
+
+def _create_exporter(honeycomb_api):
+    return OTLPSpanExporter(
         endpoint="%s/v1/traces" % honeycomb_api.rstrip("/"),
     )
-    provider.add_span_processor(
-        BatchSpanProcessor(exporter, max_queue_size=MAX_QUEUE_SIZE)
-    )
-    return provider.get_tracer("honeyflare"), provider
 
 
 def _build_trace_context(ray_id, parent_ray_id):
