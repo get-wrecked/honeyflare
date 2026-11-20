@@ -21,6 +21,10 @@ from .urlshape import compile_pattern
 from .version import __version__
 
 
+# The batch span processor drops spans once this many are waiting to be exported
+MAX_QUEUE_SIZE = 2048
+
+
 def process_bucket_object(
     bucket,
     object_name,
@@ -103,6 +107,10 @@ def process_bucket_object(
                 finally:
                     span.end(end_time=start_time_ns)
                 total_events += 1
+                if total_events % (MAX_QUEUE_SIZE // 2) == 0:
+                    # Wait for the exporter to catch up. The batch processor never
+                    # waits, it drops spans once its queue is full.
+                    provider.force_flush()
 
             os.remove(local_path)
             mark_as_processed(lock_bucket, object_name)
@@ -143,7 +151,9 @@ def create_otel_tracer(service_name, honeycomb_api, id_generator=None):
     exporter = OTLPSpanExporter(
         endpoint="%s/v1/traces" % honeycomb_api.rstrip("/"),
     )
-    provider.add_span_processor(BatchSpanProcessor(exporter))
+    provider.add_span_processor(
+        BatchSpanProcessor(exporter, max_queue_size=MAX_QUEUE_SIZE)
+    )
     return provider.get_tracer("honeyflare"), provider
 
 
