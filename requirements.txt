@@ -19,7 +19,7 @@ google-auth==2.62.2
     #   google-cloud-storage
 google-cloud-core==2.8.0
     # via google-cloud-storage
-google-cloud-storage==3.17.1
+google-cloud-storage==3.17.2
     # via -r requirements.in
 google-crc32c==1.9.0
     # via
@@ -41,7 +41,7 @@ opentelemetry-api==1.45.2
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-http-transport==0.66b2
+opentelemetry-exporter-http-transport[requests]==0.66b2
     # via opentelemetry-exporter-otlp-proto-http
 opentelemetry-exporter-otlp-common==0.66b2
     # via opentelemetry-exporter-otlp-proto-http
